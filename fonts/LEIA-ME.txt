@@ -1,0 +1,10 @@
+Fonte do Caderno: Playpen Sans (variável, pesos 100 a 800, licença OFL)
+
+1. Em fonts.google.com abra "Playpen Sans" e use Get font > Download all.
+2. Do zip, copie o arquivo variável "PlaypenSans[wght].ttf" para esta pasta e renomeie para:
+   PlaypenSans.ttf
+   (se tiver um .woff2 variável, pode usar o nome PlaypenSans.woff2)
+3. Envie para o GitHub junto com o resto. Não precisa mudar mais nada: o CSS já procura esse arquivo.
+
+Hierarquia (css/app.css, variáveis --w-*): títulos 800, subtítulos 700, rótulos e botões 600, texto 400.
+Sem o arquivo, o app usa as fontes de escrita à mão do iPhone (Bradley Hand / Noteworthy).

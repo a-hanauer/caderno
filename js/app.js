@@ -1,0 +1,173 @@
+// Caderno — ponto de entrada: rotas, abas, sincronização e virada do dia.
+import { state, subscribe, ensureLog, pruneLog, setConn } from './store.js';
+import { today, h, clear } from './util.js';
+import { icon, toast, closeAllSheets } from './ui.js';
+import { syncEvents, syncStatus, minutesAgo } from './events.js';
+import { decodeConn, validConnUrl } from './codec.js';
+import * as hoje from './views/hoje.js';
+import * as mes from './views/mes.js';
+import * as rotina from './views/rotina.js';
+import * as tarefas from './views/tarefas.js';
+import * as ajustes from './views/ajustes.js';
+
+const VIEWS = { hoje, mes, rotina, tarefas, ajustes };
+const TABS = [
+  ['hoje', 'Hoje'],
+  ['mes', 'Mês'],
+  ['rotina', 'Rotina'],
+  ['tarefas', 'Tarefas'],
+];
+
+const page = document.getElementById('page');
+const tabsEl = document.getElementById('tabs');
+let route = 'hoje';
+let day = today();
+let started = false;
+
+const ctx = { go, rerender: () => render(false) };
+
+function parseRoute() {
+  const m = location.hash.match(/^#\/([a-z]+)/);
+  return m && VIEWS[m[1]] ? m[1] : 'hoje';
+}
+
+export function go(r) {
+  if (location.hash === '#/' + r) show(r);
+  else location.hash = '#/' + r;
+}
+
+function render(animate) {
+  const keep = animate ? 0 : page.scrollTop;
+  clear(page);
+  VIEWS[route].render(page, ctx);
+  page.scrollTop = keep;
+  if (animate) {
+    page.classList.remove('enter');
+    void page.offsetWidth;
+    page.classList.add('enter');
+  }
+  paintTabs();
+}
+
+/** redesenho vindo de eventos em segundo plano: não atrapalha quem está digitando */
+function softRender() {
+  const a = document.activeElement;
+  if (route === 'ajustes') return;
+  if (a && page.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  render(false);
+}
+
+function show(next) {
+  closeAllSheets();
+  if (next !== route) {
+    VIEWS[route].leave && VIEWS[route].leave();
+    if (next === 'mes') mes.enter();
+  }
+  route = next;
+  render(true);
+}
+
+async function onHash() {
+  if (/^#c=/.test(location.hash)) return;
+  const next = parseRoute();
+  if (started && next === route) return;
+  if (next === 'ajustes') {
+    const ok = await ajustes.gate();
+    if (!ok) {
+      history.replaceState(null, '', '#/' + route);
+      return;
+    }
+  }
+  show(next);
+}
+
+// ---------- abas ----------
+function buildTabs() {
+  for (const [id, nome] of TABS)
+    tabsEl.append(h('button', { class: 'tab', type: 'button', dataset: { r: id }, 'aria-label': nome, onClick: () => go(id) }, icon(id), h('span', {}, nome)));
+}
+function paintTabs() {
+  const t = today();
+  const late = state.tasks.filter((x) => !x.done && x.due && x.due <= t).length;
+  for (const b of tabsEl.children) {
+    const on = b.dataset.r === route;
+    b.classList.toggle('on', on);
+    on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
+    b.querySelector('.dot')?.remove();
+    if (b.dataset.r === 'tarefas' && late > 0) b.append(h('span', { class: 'dot', 'aria-hidden': 'true' }, late > 9 ? '9+' : late));
+  }
+}
+
+// ---------- link de conexão (#c=...) ----------
+function consumeSetupHash() {
+  const m = location.hash.match(/^#c=(.+)$/);
+  if (!m) return;
+  try {
+    const c = decodeConn(m[1]);
+    if (!validConnUrl(c.u)) throw new Error('O endereço desse link não parece do Google Apps Script.');
+    setConn(c);
+    toast('Agenda conectada neste aparelho!');
+    syncEvents().then(() => softRender());
+  } catch (e) {
+    toast(e.message);
+  }
+  history.replaceState(null, '', location.pathname + location.search + '#/hoje');
+}
+
+// ---------- sincronização e virada do dia ----------
+function maybeSync(force) {
+  const st = syncStatus();
+  if (!st.connected) return;
+  const age = minutesAgo(st.fetchedAt);
+  if (force || age === null || age >= 30) syncEvents().then((r) => r.ok && softRender());
+}
+
+function tick() {
+  const d = today();
+  if (d === day) return;
+  day = d;
+  ensureLog(d);
+  pruneLog(d);
+  softRender();
+  maybeSync(true);
+}
+
+// ---------- início ----------
+pruneLog();
+ensureLog();
+consumeSetupHash();
+buildTabs();
+subscribe(() => {
+  if (subscribe.queued) return;
+  subscribe.queued = true;
+  requestAnimationFrame(() => {
+    subscribe.queued = false;
+    render(false);
+  });
+});
+
+window.addEventListener('hashchange', onHash);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    tick();
+    maybeSync(false);
+  }
+});
+window.addEventListener('online', () => maybeSync(true));
+setInterval(tick, 30000);
+
+(async () => {
+  await onHash();
+  if (!started) {
+    started = true;
+    if (!page.firstChild) show('hoje');
+  }
+  started = true;
+  maybeSync(false);
+})();
+
+navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
