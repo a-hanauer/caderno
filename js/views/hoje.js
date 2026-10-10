@@ -19,7 +19,8 @@ export function render(root, { go }) {
   root.className = 'page dots';
   const t = today();
   const log = ensureLog(t);
-  const conn = syncStatus().connected;
+  const st0 = syncStatus();
+  const conn = st0.connected || st0.count > 0;
   const hour = new Date().getHours();
 
   // ----- cabeçalho -----

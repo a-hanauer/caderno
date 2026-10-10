@@ -129,7 +129,7 @@ export function render(root, ctx) {
   // ===== Google Agenda =====
   const agenda = h('section', { class: 'card' }, h('h3', {}, 'Google Agenda'));
   const stack = h('div', { class: 'stack' });
-  stack.append(h('div', { class: 'status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('span', {}, st.connected ? (st.fetchedAt ? `Conectada · ${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Conectada · ainda não atualizada') : 'Não conectada')));
+  stack.append(h('div', { class: 'status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('span', {}, st.connected ? (st.fetchedAt ? `Conectada · ${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Conectada · ainda não atualizada') : (st.count ? `Sem conexão · cópia com ${st.count} eventos · de ${ago(st.fetchedAt)}` : 'Não conectada'))));
 
   if (!conn) {
     const url = h('input', { class: 'field', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', 'aria-label': 'Endereço do Apps Script', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
@@ -198,7 +198,7 @@ export function render(root, ctx) {
     ta.select();
   } }, 'Gerar código dos dados');
   bstack.append(
-    h('p', { class: 'muted small' }, 'Leva rotina, tarefas e histórico para outro celular (ou guarda uma cópia). A agenda do Google não precisa ir: ela é lida de lá.'),
+    h('p', { class: 'muted small' }, 'Leva rotina, tarefas e histórico para outro celular (ou guarda uma cópia). Também leva uma cópia dos eventos da agenda já baixados, útil se este celular não conseguir falar com o Google.'),
     h('label', { class: 'checkline' }, incl, h('span', {}, 'Incluir a conexão com o Google Agenda (contém o token: não compartilhe em lugar aberto)')),
     gen,
     out
@@ -212,7 +212,7 @@ export function render(root, ctx) {
       toast(e.message);
       return;
     }
-    const resumo = `${data.routine.length} tarefas de rotina, ${data.tasks.length} tarefas únicas, ${Object.keys(data.log).length} dias de histórico${data.conn ? ' e a conexão com a agenda' : ''}.`;
+    const resumo = `${data.routine.length} tarefas de rotina, ${data.tasks.length} tarefas únicas, ${Object.keys(data.log).length} dias de histórico${data.ev ? `, ${data.ev.events.length} eventos da agenda` : ''}${data.conn ? ' e a conexão com a agenda' : ''}.`;
     const ok = await confirmSheet({ title: mode === 'replace' ? 'Substituir tudo?' : 'Juntar com o que já existe?', text: `O código tem ${resumo}${mode === 'replace' ? ' O que está neste aparelho será trocado.' : ''}`, yes: mode === 'replace' ? 'Substituir' : 'Juntar', danger: mode === 'replace' });
     if (!ok) return;
     applyImport(data, mode);
