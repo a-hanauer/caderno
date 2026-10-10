@@ -150,7 +150,7 @@ export function render(root, ctx) {
       upd.disabled = true;
       upd.textContent = 'Atualizando…';
       const r = await syncEvents();
-      toast(r.ok ? `Pronto: ${r.count} eventos.` : REASONS[r.reason] || 'Não deu certo agora.');
+      toast(r.ok ? `Pronto: ${r.count} eventos.` : (REASONS[r.reason] || 'Não deu certo agora.') + (r.detail ? ' [' + r.detail + ']' : ''));
       ctx.rerender();
     } }, 'Atualizar agora');
     const link = h('button', { class: 'btn', type: 'button', onClick: async () => {
@@ -264,7 +264,7 @@ async function connect(u, t, btn, ctx) {
     setConn(before);
     btn.disabled = false;
     btn.textContent = label;
-    toast(REASONS[r.reason] || 'Não consegui conectar.');
+    toast((REASONS[r.reason] || 'Não consegui conectar.') + (r.detail ? ' [' + r.detail + ']' : ''));
     return;
   }
   ctx.rerender();

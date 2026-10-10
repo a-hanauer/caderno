@@ -158,13 +158,25 @@ export function syncEvents() {
       const url = `${conn.u}${conn.u.includes('?') ? '&' : '?'}token=${encodeURIComponent(conn.t)}&from=${from}&to=${to}`;
       // GET simples, sem cabeçalhos extras: evita pré-checagem CORS no Apps Script
       const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store', redirect: 'follow' });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        return { ok: false, reason: 'resposta', detail: 'HTTP ' + res.status };
+      }
       if (!data || data.ok !== true) return { ok: false, reason: data?.error === 'token' ? 'token' : 'resposta' };
       setCache({ events: sanitize(data.events), fetchedAt: Date.now(), from, to });
       memo = { sig: '', idx: null };
       return { ok: true, count: data.events.length };
     } catch (e) {
-      return { ok: false, reason: e.name === 'AbortError' ? 'tempo' : 'rede' };
+      if (e.name === 'AbortError') return { ok: false, reason: 'tempo' };
+      // diagnóstico: uma checagem "opaca" diz se o Google respondeu mas o navegador bloqueou a leitura
+      let reason = 'rede';
+      try {
+        await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined });
+        reason = 'acesso';
+      } catch {}
+      return { ok: false, reason, detail: String(e && e.message || e).slice(0, 80) };
     } finally {
       clearTimeout(timer);
       inflight = null;
@@ -184,4 +196,5 @@ export const REASONS = {
   resposta: 'A resposta do Google veio estranha. Confira o endereço.',
   tempo: 'O Google demorou demais. Tente de novo.',
   rede: 'Não consegui falar com o Google. Confira o endereço e a internet.',
+  acesso: 'O Google respondeu, mas bloqueou a leitura. Na implantação do Apps Script, "Quem pode acessar" precisa ser "Qualquer pessoa" (com Nova versão).',
 };
