@@ -1,5 +1,5 @@
 // Códigos compartilháveis: backup/transferência dos dados e conexão com o Google Agenda.
-import { state, getConn, replaceState, setConn, getDefaults } from './store.js';
+import { state, getConn, getCache, setCache, replaceState, setConn, getDefaults } from './store.js';
 import { isYmd, uid, addDays, today } from './util.js';
 
 const enc = new TextEncoder();
@@ -29,6 +29,9 @@ export async function exportCode({ withConn = false } = {}) {
   const { pinHash, pinSalt, ...settings } = state.settings;
   const payload = { app: 'caderno', v: 1, at: new Date().toISOString(), profile: state.profile, settings, routine: state.routine, tasks: state.tasks, log };
   if (withConn && getConn()) payload.conn = getConn();
+  // cópia dos eventos da agenda (para aparelhos que não conseguem falar com o Google)
+  const cache = getCache();
+  if (cache?.events?.length) payload.ev = { at: cache.fetchedAt || 0, from: cache.from, to: cache.to, e: cache.events.map((x) => [x.title, x.allDay ? 1 : 0, x.start, x.end]) };
   const json = JSON.stringify(payload);
   if (typeof CompressionStream !== 'undefined') return 'CADERNO1.' + toB64u(await pipe(enc.encode(json), new CompressionStream('gzip')));
   return 'CADERNO0.' + toB64u(enc.encode(json));
@@ -67,7 +70,19 @@ function sanitizePayload(o) {
     tasks: [],
     log: {},
     conn: null,
+    ev: null,
   };
+  if (o.ev && Array.isArray(o.ev.e)) {
+    const D = /^\d{4}-\d{2}-\d{2}$/, DT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+    const events = [];
+    for (const x of o.ev.e.slice(0, 3000)) {
+      if (!Array.isArray(x) || typeof x[0] !== 'string') continue;
+      const allDay = !!x[1];
+      if (!(allDay ? D : DT).test(x[2])) continue;
+      events.push({ id: 'i' + events.length, title: str(x[0], 120) || 'Sem título', allDay, start: x[2], end: typeof x[3] === 'string' ? x[3] : x[2], cal: '' });
+    }
+    if (events.length) out.ev = { events, fetchedAt: typeof o.ev.at === 'number' ? o.ev.at : 0, from: isYmd(o.ev.from) ? o.ev.from : null, to: isYmd(o.ev.to) ? o.ev.to : null };
+  }
   for (const r of Array.isArray(o.routine) ? o.routine.slice(0, 60) : []) {
     if (!r || !r.label) continue;
     out.routine.push({
@@ -132,6 +147,7 @@ export function applyImport(data, mode) {
     replaceState({ ...state, routine, tasks, log });
   }
   if (data.conn) setConn(data.conn);
+  if (data.ev && data.ev.fetchedAt >= (getCache()?.fetchedAt || 0)) setCache(data.ev);
 }
 
 // ---------- conexão com o Google Agenda ----------
