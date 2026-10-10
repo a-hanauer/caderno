@@ -35,7 +35,7 @@ function defaults() {
   return {
     v: 1,
     profile: { name: 'Sebastião' },
-    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai', kwMae: 'mãe, mae, mamãe, mamae' },
+    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai, andré, andre', kwMae: 'mãe, mae, mamãe, mamae, aline' },
     routine: defaultRoutine(),
     log: {}, // 'YYYY-MM-DD' -> { plan:[{id,label,emoji,block}], done:[ids] }
     tasks: [], // { id, text, due:'YYYY-MM-DD'|null, done, doneAt, created }
@@ -56,11 +56,15 @@ function load() {
   const base = defaults();
   const saved = readJSON(KEY);
   if (!saved || typeof saved !== 'object') return base;
+  const st = { ...base.settings, ...(saved.settings || {}) };
+  // migração: quem ainda tem as palavras do modelo antigo recebe os nomes dos pais
+  if (st.kwPai === 'pai, papai') st.kwPai = base.settings.kwPai;
+  if (st.kwMae === 'mãe, mae, mamãe, mamae') st.kwMae = base.settings.kwMae;
   return {
     ...base,
     ...saved,
     profile: { ...base.profile, ...(saved.profile || {}) },
-    settings: { ...base.settings, ...(saved.settings || {}) },
+    settings: st,
     routine: Array.isArray(saved.routine) ? saved.routine : base.routine,
     log: saved.log && typeof saved.log === 'object' ? saved.log : {},
     tasks: Array.isArray(saved.tasks) ? saved.tasks : [],

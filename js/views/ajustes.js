@@ -179,7 +179,7 @@ export function render(root, ctx) {
   const kwMae = h('input', { class: 'field', type: 'text', value: state.settings.kwMae, 'aria-label': 'Palavras da casa da mãe', autocapitalize: 'off', spellcheck: 'false' });
   kwPai.addEventListener('change', () => commit((s) => (s.settings.kwPai = kwPai.value.slice(0, 80)), { silent: true }));
   kwMae.addEventListener('change', () => commit((s) => (s.settings.kwMae = kwMae.value.slice(0, 80)), { silent: true }));
-  stack.append(h('hr', { style: { border: 0, borderTop: '1px dashed var(--line)', width: '100%', margin: '2px 0' } }), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa do Papai'), kwPai), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa da Mamãe'), kwMae), h('p', { class: 'hint' }, 'Eventos de dia inteiro com uma dessas palavras no título dizem em qual casa ele dorme. Separe por vírgula. Ex.: um evento "André - pai" é reconhecido pela palavra "pai".'));
+  stack.append(h('hr', { style: { border: 0, borderTop: '1px dashed var(--line)', width: '100%', margin: '2px 0' } }), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa do Papai'), kwPai), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa da Mamãe'), kwMae), h('p', { class: 'hint' }, 'Eventos de dia inteiro com uma dessas palavras no título dizem em qual casa ele dorme. Separe por vírgula. Ex.: "André - pai" ou só "André" é reconhecido pela palavra "pai" ou "André".'));
   agenda.append(stack);
 
   // ===== backup =====

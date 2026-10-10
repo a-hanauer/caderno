@@ -62,7 +62,7 @@ const WHENS = ['todos', 'escola', 'fds'];
 function sanitizePayload(o) {
   const out = {
     profile: { name: str(o.profile?.name || 'Sebastião', 30) },
-    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae', 80) },
+    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai, andré, andre', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae, aline', 80) },
     routine: [],
     tasks: [],
     log: {},
