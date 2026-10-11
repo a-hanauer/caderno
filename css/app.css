@@ -44,7 +44,7 @@
   --ml: 30px;       /* posição da margem vermelha */
   --pl: 44px;       /* início do texto nas páginas pautadas */
   --ic: 18px;       /* ícones do calendário */
-  --safe-t: var(--sat, env(safe-area-inset-top, 0px));
+  --safe-t: max(var(--lift, 0px), var(--sat, env(safe-area-inset-top, 0px)));
   --safe-b: var(--sab, env(safe-area-inset-bottom, 0px));
   --top-gap: 14px;  /* respiro entre a Dynamic Island e o início do cabeçalho */
   --top-h: calc(var(--safe-t) + var(--top-gap));
@@ -72,7 +72,7 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
-#app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: var(--paper); overflow: hidden; }
+#app { position: fixed; top: calc(-1 * var(--lift, 0px)); bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: var(--paper); overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
   background-color: var(--paper);

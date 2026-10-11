@@ -23,6 +23,11 @@
       if (t > (s.t || 0)) { s.t = t; ch = true; }
       if (b > (s.b || 0)) { s.b = b; ch = true; }
       if (ch) { try { localStorage.setItem(K, JSON.stringify(s)); } catch (e) {} ap(); }
+      /* iOS 26/27 (bug do WebKit): no atalho, a página começa ABAIXO da barra de status e a margem de cima vem 0.
+         A diferença entre a tela e a janela é a altura dessa faixa: subimos o app esse tanto para pintar por baixo dela. */
+      var gap = app ? Math.max(screen.width, screen.height) - innerHeight : 0;
+      if (app && t < 1 && gap > 20 && gap < 90) r.style.setProperty('--lift', gap + 'px');
+      else r.style.removeProperty('--lift');
     }
     measure();
     addEventListener('DOMContentLoaded', measure);
