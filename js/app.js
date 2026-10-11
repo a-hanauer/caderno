@@ -13,9 +13,9 @@ import * as ajustes from './views/ajustes.js';
 const VIEWS = { hoje, mes, rotina, tarefas, ajustes };
 const TABS = [
   ['hoje', 'Hoje'],
-  ['mes', 'Mês'],
   ['rotina', 'Rotina'],
   ['tarefas', 'Tarefas'],
+  ['mes', 'Mês'],
 ];
 
 const page = document.getElementById('page');
