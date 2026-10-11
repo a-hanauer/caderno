@@ -207,7 +207,7 @@ body.v-ajustes #page { background-color: #f2f2f7; }
 .wd .wxs .ico { width: 22px; height: 22px; }
 .wd .wxs .ico .a { fill-opacity: .9; }
 .wd .wxs em { font-style: normal; font-size: 12px; font-weight: var(--w-head); }
-.wd .wxs.empty { min-height: 6px; }
+.wd .wxs.nowx { min-height: 6px; }
 .wd .bar { width: 64%; height: 5px; border-radius: 3px; background: var(--c, transparent); margin-top: 4px; }
 .wd.pai { --c: #8ab8f6; } .wd.mae { --c: #f59cc6; } .wd.troca { --c: #c2a6f3; }
 .wd.none .bar { background: rgba(255, 255, 255, .25); }
@@ -271,12 +271,13 @@ body.v-ajustes #page { background-color: #f2f2f7; }
 .cover .note { color: var(--ink); }
 .cover .sec-title .ico { --acc: #fff; }
 
-.ontem { border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; background: var(--red-l); border: 2px dashed var(--red); }
-.ontem.good { background: var(--green-l); border-color: var(--green); }
+.ontem { border-radius: 12px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; background: #fff1ef; border: 2px solid var(--red); color: var(--ink); box-shadow: 0 3px 0 rgba(0, 0, 0, .2); }
+.ontem.good { background: #eefaf2; border-color: var(--green); }
 .ontem > .ico { width: 24px; height: 24px; color: var(--red); --acc: var(--red); }
 .ontem.good > .ico { color: var(--green-d); --acc: var(--green); }
-.ontem p { flex: 1; font-size: 15px; line-height: 1.25; }
-.ontem button { flex: none; border: 2px solid currentColor; border-radius: 10px; background: #fff; padding: 6px 12px; min-height: 38px; font-weight: var(--w-label); font-size: 15px; }
+.ontem p { flex: 1; font-size: 15px; line-height: 1.25; font-weight: var(--w-label); color: var(--ink); }
+.ontem button { flex: none; border: 0; border-radius: 10px; background: var(--red); color: #fff; padding: 6px 14px; min-height: 38px; font-weight: var(--w-head); font-size: 15px; }
+.ontem.good button { background: var(--green); }
 
 /* ---------- HOJE: seu dia (linha do tempo) ---------- */
 .day-card { color: var(--ink); background: var(--paper-3); border: 2px solid var(--ink); border-radius: 16px; padding: 12px 12px 6px; box-shadow: 0 3px 0 rgba(0, 0, 0, .12); }
