@@ -63,7 +63,7 @@ export function render(root, ctx) {
         'button',
         { class: ['cell', hs && 'h-' + hs, !inMonth && 'out', d < t && 'past', d === t && 'today', d === selected && 'sel'].filter(Boolean).join(' '), type: 'button', 'aria-label': label, onClick: () => openDay(d, ctx) },
         h('span', { class: 'n' }, dt.getDate()),
-        h('span', { class: 'ics' }, cats.slice(0, 3).map((c) => h('span', { class: 'ico-wrap', style: { display: 'contents', '--c': c.color } }, icon(c.icon))), cats.length > 3 && h('span', { class: 'more' }, `+${cats.length - 3}`))
+        h('span', { class: 'ics n' + Math.min(cats.length, 3) }, cats.slice(0, 3).map((c) => h('span', { class: 'ico-wrap', style: { display: 'contents', '--c': c.color } }, icon(c.icon))), cats.length > 3 && h('span', { class: 'more' }, `+${cats.length - 3}`))
       )
     );
   }

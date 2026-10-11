@@ -44,7 +44,7 @@
   --ml: 30px;       /* posição da margem vermelha */
   --pl: 44px;       /* início do texto nas páginas pautadas */
   --ic: 18px;       /* ícones do calendário */
-  --safe-t: max(var(--lift, 0px), var(--sat, env(safe-area-inset-top, 0px)));
+  --safe-t: var(--sat, env(safe-area-inset-top, 0px));
   --safe-b: var(--sab, env(safe-area-inset-bottom, 0px));
   --top-gap: 14px;  /* respiro entre a Dynamic Island e o início do cabeçalho */
   --top-h: calc(var(--safe-t) + var(--top-gap));
@@ -72,7 +72,7 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
-#app { position: fixed; top: calc(-1 * var(--lift, 0px)); bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: var(--paper); overflow: hidden; }
+#app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
   background-color: var(--paper);
@@ -81,9 +81,7 @@ body.sheet-open #page { overflow: hidden; }
 }
 #page::-webkit-scrollbar { display: none; }
 /* faixa sob a barra de status / Dynamic Island: mesma cor do topo da página */
-#app[data-area] { background: var(--area); }
-body.v-ajustes #app { background: #0a6e3a; }
-#top { position: absolute; top: 0; left: 0; right: 0; height: var(--top-h); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
+#top { position: fixed; top: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; height: var(--top-h); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
 body[data-cover] #top { background-color: var(--cv); }
 body.v-ajustes #top { background: #0a6e3a; }
 #page.enter { animation: pageIn .22s ease-out; }
@@ -178,8 +176,8 @@ body.v-ajustes #top { background: #0a6e3a; }
 .tappable:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 
 /* ---------- HOJE: a capa do caderno (cor = casa do dia) ---------- */
-body[data-cover], body[data-cover] #app { background-color: var(--cv); }
-body[data-cover] #app, body[data-cover] #top { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .055) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(0, 0, 0, .05) 0 2px, transparent 2px 5px); }
+body[data-cover] { background-color: var(--cv); }
+#page.cover, body[data-cover] #top { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .055) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(0, 0, 0, .05) 0 2px, transparent 2px 5px); }
 body[data-cover='pai'] { --cv: var(--cv-pai); } body[data-cover='mae'] { --cv: var(--cv-mae); } body[data-cover='troca'] { --cv: var(--cv-troca); } body[data-cover='none'] { --cv: var(--cv-none); }
 body.v-ajustes #page { background-color: #f2f2f7; }
 #page.cover { background-color: transparent; }
@@ -405,10 +403,14 @@ button.tl-head .chev { color: var(--muted); transition: transform .2s; width: 20
 .cell:nth-child(7n) { border-right: 0; }
 .cell.h-pai { --hc: var(--pai); --hl: var(--pai-l); } .cell.h-mae { --hc: var(--mae); --hl: var(--mae-l); } .cell.h-troca { --hc: var(--troca); --hl: var(--troca-l); }
 .cell .n { font-size: 16px; font-weight: var(--w-label); line-height: 1; min-width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 50%; }
-.cell .ics { display: flex; flex-wrap: wrap; gap: 2px; align-items: flex-start; align-content: flex-start; max-width: 100%; }
-.cell .ics .ico { width: var(--ic); height: var(--ic); color: var(--c); --acc: var(--c); }
+.cell .ics { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; align-self: stretch; padding-bottom: 2px; }
+.cell .ics .ico { width: var(--ic); height: var(--ic); --ic: 22px; color: var(--c); --acc: var(--c); }
 .cell .ics .more { font-size: 11px; font-weight: var(--w-head); color: var(--ink-soft); line-height: 1; padding-left: 1px; }
 .cell.out { opacity: .38; }
+.cell .ics.n1 .ico { --ic: 32px; }
+.cell .ics.n2 { flex-direction: column; align-items: center; flex-wrap: nowrap; }
+.cell .ics.n2 .ico { --ic: 25px; }
+@media (max-width: 360px) { .cell .ics.n1 .ico { --ic: 26px; } .cell .ics.n2 .ico, .cell .ics .ico { --ic: 17px; } }
 /* dias que já passaram: um X de caneta por cima, como no calendário de parede */
 .cell.past > * { opacity: .72; }
 .cell.past::after {
@@ -564,7 +566,6 @@ body.v-ajustes .pin-dots i.f { background: #1c1c1e; }
   .p-head h1 { font-size: 30px; }
 }
 @media (max-width: 350px) {
-  :root { --rpad: 48px; }
   body { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {

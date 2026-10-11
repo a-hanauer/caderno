@@ -145,7 +145,7 @@ function diag() {
     `app ${lay.app || '-'}`,
     `abas ${lay.tabs || '-'}`,
     `safe ${cs.getPropertyValue('--safe-t').trim()}/${cs.getPropertyValue('--safe-b').trim()}`,
-    `lift ${r.style.getPropertyValue('--lift') || 0}`,
+    `body ${getComputedStyle(document.body).backgroundColor}`,
   ];
   return 'diag: ' + f.join(' · ');
 }
