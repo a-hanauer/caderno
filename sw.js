@@ -1,7 +1,7 @@
 // Service worker: deixa o Caderno funcionar sem internet.
 // Estratégia: rede primeiro (sempre a versão mais nova quando há internet), com a cópia
 // guardada como reserva sem internet. Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v26';
+const VERSION = 'caderno-v27';
 const SHELL = [
   './',
   './index.html',
@@ -21,9 +21,7 @@ const SHELL = [
   './js/views/rotina.js',
   './js/views/tarefas.js',
   './js/views/ajustes.js',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png',
+  './apple-touch-icon-v2.png',
   './icons/favicon-32.png',
 ];
 
