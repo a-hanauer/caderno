@@ -147,6 +147,7 @@ function diag() {
     `abas ${lay.tabs || '-'}`,
     `safe ${cs.getPropertyValue('--safe-t').trim()}/${cs.getPropertyValue('--safe-b').trim()}`,
     `body ${getComputedStyle(document.body).backgroundColor}`,
+    `apph ${r.style.getPropertyValue('--app-h') || '-'}`,
   ];
   return 'diag: ' + f.join(' · ');
 }
