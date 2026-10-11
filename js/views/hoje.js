@@ -103,12 +103,12 @@ export function render(root, ctx) {
     }
     const quando = (d) => {
       const n = diffDays(t, d);
-      return n === 1 ? 'amanhã' : n < 7 ? DIAS_CURTOS[parse(d).getDay()] : `dia ${parse(d).getDate()}`;
+      return n === 1 ? 'amanhã' : n < 7 ? weekdayName(d).replace('-feira', '') : `dia ${parse(d).getDate()}`;
     };
     const quem = (x) => (x === 'pai' ? 'Papai' : x === 'mae' ? 'Mamãe' : 'troca');
     const parts = [];
     if (hs) parts.push(h('span', {}, icon('casa'), hs === 'troca' ? 'Hoje: troca' : `${quem(hs)} hoje`));
-    if (nd) parts.push(h('span', {}, icon('troca'), `${cap(quando(nd))} → ${quem(nh)}`));
+    if (nd) parts.push(h('span', {}, icon('troca'), `${cap(quando(nd))} - ${quem(nh)}`));
     if (parts.length) houseLine = h('p', { class: 'house-line' }, ...parts);
   }
 
