@@ -116,14 +116,37 @@ async function copyText(text) {
 function diag() {
   const r = document.documentElement;
   const cs = getComputedStyle(r);
-  const p = document.createElement('div');
-  p.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
-  r.appendChild(p);
-  const pc = getComputedStyle(p);
-  const env = `${Math.round(parseFloat(pc.paddingTop) || 0)}/${Math.round(parseFloat(pc.paddingBottom) || 0)}`;
-  p.remove();
-  const mode = r.classList.contains('app') ? 'app' : 'navegador';
-  return `diag: ${mode} · env ${env} · guardado ${r.style.getPropertyValue('--sat') || 0}/${r.style.getPropertyValue('--sab') || 0} · tela ${innerWidth}x${innerHeight} (${screen.width}x${screen.height}) · topo ${cs.getPropertyValue('--safe-t').trim()}`;
+  const probe = (css) => {
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;' + css;
+    r.appendChild(p);
+    const v = Math.round(p.getBoundingClientRect().height);
+    p.remove();
+    return v;
+  };
+  const pad = (side) => {
+    const p = document.createElement('div');
+    p.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-${side}:env(safe-area-inset-${side})`;
+    r.appendChild(p);
+    const v = Math.round(parseFloat(getComputedStyle(p)['padding' + side[0].toUpperCase() + side.slice(1)]) || 0);
+    p.remove();
+    return v;
+  };
+  const lay = window.__lay || {};
+  const vv = window.visualViewport;
+  const f = [
+    r.classList.contains('app') ? 'app' : 'navegador',
+    `env ${pad('top')}/${pad('bottom')}`,
+    `guardado ${r.style.getPropertyValue('--sat') || 0}/${r.style.getPropertyValue('--sab') || 0}`,
+    `inner ${innerWidth}x${innerHeight}`,
+    `screen ${screen.width}x${screen.height}`,
+    `vv ${vv ? Math.round(vv.height) + '@' + Math.round(vv.offsetTop) : '-'}`,
+    `vh ${probe('height:100vh')} lvh ${probe('height:100lvh')} svh ${probe('height:100svh')} dvh ${probe('height:100dvh')}`,
+    `app ${lay.app || '-'}`,
+    `abas ${lay.tabs || '-'}`,
+    `safe ${cs.getPropertyValue('--safe-t').trim()}/${cs.getPropertyValue('--safe-b').trim()}`,
+  ];
+  return 'diag: ' + f.join(' · ');
 }
 
 export function render(root, ctx) {
