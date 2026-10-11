@@ -88,7 +88,7 @@ function sanitizePayload(o) {
     out.routine.push({
       id: str(r.id || 'r-' + uid(), 40),
       label: str(r.label, 40),
-      emoji: str(r.emoji || '✅', 8),
+      emoji: str(r.emoji || 'ok', 16),
       block: BLOCKS.includes(r.block) ? r.block : 'manha',
       when: WHENS.includes(r.when) ? r.when : 'todos',
     });
@@ -107,7 +107,7 @@ function sanitizePayload(o) {
   for (const [d, v] of Object.entries(o.log && typeof o.log === 'object' ? o.log : {})) {
     if (!isYmd(d) || !v || !Array.isArray(v.plan)) continue;
     out.log[d] = {
-      plan: v.plan.slice(0, 60).map((p) => ({ id: str(p.id, 40), label: str(p.label, 40), emoji: str(p.emoji || '✅', 8), block: BLOCKS.includes(p.block) ? p.block : 'manha' })),
+      plan: v.plan.slice(0, 60).map((p) => ({ id: str(p.id, 40), label: str(p.label, 40), emoji: str(p.emoji || 'ok', 16), block: BLOCKS.includes(p.block) ? p.block : 'manha' })),
       done: Array.isArray(v.done) ? v.done.slice(0, 60).map((x) => str(x, 40)) : [],
     };
   }

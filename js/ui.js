@@ -1,31 +1,14 @@
 // Componentes de interface compartilhados: ícones, folhas (sheets), avisos, checkbox desenhado à mão.
-import { h, svgEl } from './util.js';
+import { h } from './util.js';
+import { iconMarkup, iconKey, ROUTINE_ICONS } from './icons.js';
 
-const svg = (inner) => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
-
-export const ICONS = {
-  hoje: svg('<path d="M3 5.5C5.5 4.5 9 4.5 12 6.5c3-2 6.5-2 9-1v13c-2.5-1-6-1-9 1-3-2-6.5-2-9-1z"/><path d="M12 6.5v13"/>'),
-  mes: svg('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
-  rotina: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'),
-  tarefas: svg('<path d="M4 6.5l1.6 1.6L8.5 5M4 12.5l1.6 1.6 2.9-3.1M4 18.5l1.6 1.6 2.9-3.1"/><path d="M12 7h8M12 13h8M12 19h8"/>'),
-  gear: svg(
-    '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-  ),
-  plus: svg('<path d="M12 5v14M5 12h14"/>'),
-  pencil: svg('<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="M14.5 6.5l3 3"/>'),
-  trash: svg('<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>'),
-  up: svg('<path d="M6 14l6-6 6 6"/>'),
-  down: svg('<path d="M6 10l6 6 6-6"/>'),
-  close: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
-  left: svg('<path d="M15 5l-7 7 7 7"/>'),
-  right: svg('<path d="M9 5l7 7-7 7"/>'),
-  share: svg('<path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/>'),
-  copy: svg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
-  check: svg('<path d="M5 12.5l4.5 4.5L19 7"/>'),
-  back: svg('<path d="M15 5l-7 7 7 7"/>'),
+/** ícone próprio (veja icons.js). Aceita também ids antigos de emoji. */
+export const icon = (name, cls) => {
+  const el = document.createElement('span');
+  el.className = 'ico' + (cls ? ' ' + cls : '');
+  el.innerHTML = iconMarkup(iconKey(name));
+  return el;
 };
-
-export const icon = (name, cls) => svgEl(ICONS[name], cls);
 
 // ---------- checkbox desenhado à mão ----------
 const CB = `<svg viewBox="0 0 32 32" aria-hidden="true"><path class="cb-box" d="M5 6.5c5-1 17-1.2 22 0.3 0.6 5 0.8 14 0 19.4-5 1-17 1-22-0.2-0.8-6-0.7-14 0-19.5z"/><path class="cb-tick" d="M8 16.5l5.5 5.5L25 9"/></svg>`;
@@ -38,6 +21,14 @@ export function checkbox(checked) {
 
 // ---------- carimbo ----------
 export const stamp = (text, cls = '') => h('span', { class: 'stamp ' + cls }, text);
+
+// ---------- carimbo de "tudo feito" ----------
+export function celebrate() {
+  const ov = h('div', { class: 'celebrate' }, h('span', { class: 'stamp pop' }, 'Tudo feito!'));
+  document.getElementById('app').append(ov);
+  setTimeout(() => ov.classList.add('out'), 1700);
+  setTimeout(() => ov.remove(), 2300);
+}
 
 // ---------- aviso (post-it) ----------
 let toastTimer;
@@ -135,30 +126,17 @@ export function confirmSheet({ title, text, yes = 'Sim', no = 'Cancelar', danger
   });
 }
 
-export const EMOJIS = [
-  '🪥', '🚿', '🛏️', '🥣', '🎒', '📚', '✏️', '📖', '🧼', '👕', '🧦', '👟', '🍎', '🥛', '💧', '🍽️', '🧹', '🗑️', '🐶', '🐱', '🌱', '🎹', '⚽', '🎮', '🧩', '🔬', '🤖', '🗣️', '📝', '🧮', '🎨', '🎵', '🏃', '🚲', '🧘', '🦷', '📱', '🍳', '⏰', '✅',
-];
-
-export function emojiPicker(current, onPick) {
-  const grid = h('div', { class: 'emoji-grid' });
-  const mark = () => [...grid.children].forEach((b) => b.classList.toggle('sel', b.dataset.e === current));
-  for (const e of EMOJIS)
+export function iconPicker(current, onPick) {
+  current = iconKey(current);
+  const grid = h('div', { class: 'icon-grid' });
+  const mark = () => [...grid.children].forEach((b) => b.classList.toggle('sel', b.dataset.k === current));
+  for (const k of ROUTINE_ICONS)
     grid.append(
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'emoji-btn',
-          dataset: { e },
-          'aria-label': e,
-          onClick: () => {
-            current = e;
-            mark();
-            onPick(e);
-          },
-        },
-        e
-      )
+      h('button', { type: 'button', class: 'icon-pick', dataset: { k }, 'aria-label': k, onClick: () => {
+        current = k;
+        mark();
+        onPick(k);
+      } }, icon(k))
     );
   mark();
   return grid;
@@ -183,7 +161,7 @@ export function choice(options, current, onPick, cls = '') {
             onPick(o.id);
           },
         },
-        o.emoji ? o.emoji + ' ' : '',
+        o.icon ? icon(o.icon) : null,
         o.nome
       )
     );

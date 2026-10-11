@@ -1,7 +1,7 @@
 // Tela "Rotina": checklist diário em blocos (manhã, tarde, noite), com histórico da semana.
 import { state, BLOCOS, QUANDO, ensureLog, dayStats, streak, toggleRoutine, addRoutineItem, updateRoutineItem, removeRoutineItem, moveRoutineItem } from '../store.js';
 import { today, addDays, dow, cap, weekdayName, longDate, shortDate, INICIAIS, h } from '../util.js';
-import { icon, checkbox, openSheet, confirmSheet, emojiPicker, choice, toast } from '../ui.js';
+import { icon, checkbox, openSheet, confirmSheet, iconPicker, choice, toast, celebrate } from '../ui.js';
 import { currentBlock } from './hoje.js';
 
 let editing = false;
@@ -79,10 +79,7 @@ export function render(root, ctx) {
     }
     if (celebrate && s && s.complete && celebrated !== t) {
       celebrated = t;
-      const ov = h('div', { class: 'celebrate' }, h('span', { class: 'stamp pop' }, 'Tudo feito!'));
-      document.getElementById('notebook').append(ov);
-      setTimeout(() => ov.classList.add('out'), 1700);
-      setTimeout(() => ov.remove(), 2300);
+      celebrate();
     }
   };
 
@@ -91,7 +88,7 @@ export function render(root, ctx) {
     const editItems = state.routine.filter((r) => r.block === b.id);
     if (!editing && !planItems.length) continue;
     const isCur = b.id === cur.id;
-    const section = h('section', { class: 'block' + (opened.has(b.id) || editing ? '' : ' closed') });
+    const section = h('section', { class: 'block' + (opened.has(b.id) || editing ? '' : ' closed'), dataset: { b: b.id } });
     const cnt = h('span', { class: 'cnt' });
     counters.set(b.id, cnt);
     const headBtn = h(
@@ -102,7 +99,7 @@ export function render(root, ctx) {
         closed ? opened.delete(b.id) : opened.add(b.id);
         headBtn.setAttribute('aria-expanded', String(!closed));
       } },
-      h('span', {}, b.emoji),
+      icon(b.icon),
       h('span', { class: 'nm' }, b.nome),
       cnt,
       !editing && icon('down', 'chev')
@@ -113,7 +110,7 @@ export function render(root, ctx) {
       const done = new Set(log.done);
       for (const p of planItems) {
         const cb = checkbox(done.has(p.id));
-        const row = h('button', { class: 'item' + (done.has(p.id) ? ' done' : ''), type: 'button', role: 'checkbox', 'aria-checked': String(done.has(p.id)) }, cb, h('span', { class: 'em' }, p.emoji), h('span', { class: 'lbl' }, h('span', { class: 'strike' }, p.label)));
+        const row = h('button', { class: 'item' + (done.has(p.id) ? ' done' : ''), type: 'button', role: 'checkbox', 'aria-checked': String(done.has(p.id)) }, cb, h('span', { class: 'ri' }, icon(p.emoji)), h('span', { class: 'lbl' }, h('span', { class: 'strike' }, p.label)));
         row.addEventListener('click', () => {
           const on = toggleRoutine(t, p.id);
           row.classList.toggle('done', on);
@@ -129,7 +126,7 @@ export function render(root, ctx) {
           h(
             'div',
             { class: 'item edit' },
-            h('span', { class: 'em' }, r.emoji),
+            h('span', { class: 'ri' }, icon(r.emoji)),
             h('button', { class: 'lbl', type: 'button', onClick: () => itemSheet(r) }, r.label, r.when !== 'todos' && [' ', h('span', { class: 'tag' }, quandoTag[r.when])]),
             h('button', { class: 'icon-btn sm', type: 'button', 'aria-label': 'Subir', onClick: () => moveRoutineItem(r.id, -1) }, icon('up')),
             h('button', { class: 'icon-btn sm', type: 'button', 'aria-label': 'Descer', onClick: () => moveRoutineItem(r.id, 1) }, icon('down')),
@@ -151,7 +148,7 @@ export function render(root, ctx) {
 }
 
 function itemSheet(item, blockId) {
-  const draft = item ? { ...item } : { label: '', emoji: '✅', block: blockId || 'manha', when: 'todos' };
+  const draft = item ? { ...item } : { label: '', emoji: 'ok', block: blockId || 'manha', when: 'todos' };
   const input = h('input', { class: 'field', type: 'text', maxLength: 40, placeholder: 'Ex.: Escovar os dentes', value: draft.label, 'aria-label': 'Nome da tarefa' });
   const save = h('button', { class: 'btn primary', type: 'button', style: { flex: '1' }, onClick: () => {
     const label = input.value.trim();
@@ -166,8 +163,8 @@ function itemSheet(item, blockId) {
       'div',
       { class: 'stack' },
       h('div', {}, h('span', { class: 'label' }, 'O que fazer?'), input),
-      h('div', {}, h('span', { class: 'label' }, 'Desenho'), emojiPicker(draft.emoji, (e) => (draft.emoji = e))),
-      h('div', {}, h('span', { class: 'label' }, 'Quando do dia?'), choice(BLOCOS.map((b) => ({ id: b.id, nome: b.nome, emoji: b.emoji })), draft.block, (v) => (draft.block = v))),
+      h('div', {}, h('span', { class: 'label' }, 'Desenho'), iconPicker(draft.emoji, (e) => (draft.emoji = e))),
+      h('div', {}, h('span', { class: 'label' }, 'Quando do dia?'), choice(BLOCOS.map((b) => ({ id: b.id, nome: b.nome, icon: b.icon })), draft.block, (v) => (draft.block = v))),
       h('div', {}, h('span', { class: 'label' }, 'Em quais dias?'), choice(QUANDO, draft.when, (v) => (draft.when = v)))
     ),
     footer: h('div', { class: 'row-btns' }, save),

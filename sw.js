@@ -1,7 +1,7 @@
 // Service worker: deixa o Caderno funcionar sem internet.
 // Estratégia: responde na hora com a cópia guardada e atualiza em segundo plano
 // (a versão nova aparece na abertura seguinte). Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v6';
+const VERSION = 'caderno-v8';
 const SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const SHELL = [
   './js/events.js',
   './js/codec.js',
   './js/ui.js',
+  './js/icons.js',
   './js/views/hoje.js',
   './js/views/mes.js',
   './js/views/rotina.js',

@@ -5,15 +5,15 @@ import { addDays, diffDays, norm, today } from './util.js';
 
 // ---------- categorias (por palavras no título) ----------
 export const CATS = [
-  { id: 'prova', emoji: '📝', label: 'Prova', color: '#d9453d', re: /\b(prova|teste|avaliacao|simulado|recuperacao|exame)\b/, destaque: true },
-  { id: 'trabalho', emoji: '📚', label: 'Trabalho / tema', color: '#e8913a', re: /\b(trabalho|entrega|apresentacao|seminario|tema|projeto|feira)\b/, destaque: true },
-  { id: 'niver', emoji: '🎂', label: 'Aniversário', color: '#d8a31a', re: /\b(aniversario|niver)\b/, destaque: true },
-  { id: 'data', emoji: '🎉', label: 'Data especial', color: '#8a63d2', re: /\b(feriado|recesso|ferias|sem aula|natal|pascoa|dia d[oae]s?)\b/, destaque: true },
-  { id: 'robotica', emoji: '🤖', label: 'Robótica', color: '#3f8f9e', re: /robotic/ },
-  { id: 'ingles', emoji: '🗣️', label: 'Inglês', color: '#4f7fd0', re: /\b(ingles|english)\b/ },
-  { id: 'terapia', emoji: '💬', label: 'Terapia', color: '#7a8f5a', re: /\b(terapia|psicolog\w*|psico)\b/ },
-  { id: 'escola', emoji: '🏫', label: 'Escola', color: '#c2802f', re: /\b(escola|aula|reuniao|passeio|excursao)\b/ },
-  { id: 'outro', emoji: '📌', label: 'Compromisso', color: '#6b7b93', re: /./ },
+  { id: 'prova', icon: 'prova', label: 'Prova', color: '#d9453d', re: /\b(prova|teste|avaliacao|simulado|recuperacao|exame)\b/, destaque: true },
+  { id: 'trabalho', icon: 'livro', label: 'Trabalho / tema', color: '#e8913a', re: /\b(trabalho|entrega|apresentacao|seminario|tema|projeto|feira)\b/, destaque: true },
+  { id: 'niver', icon: 'bolo', label: 'Aniversário', color: '#d8a31a', re: /\b(aniversario|niver)\b/, destaque: true },
+  { id: 'data', icon: 'estrela', label: 'Data especial', color: '#8a63d2', re: /\b(feriado|recesso|ferias|sem aula|natal|pascoa|dia d[oae]s?)\b/, destaque: true },
+  { id: 'robotica', icon: 'robo', label: 'Robótica', color: '#3f8f9e', re: /robotic/ },
+  { id: 'ingles', icon: 'fala', label: 'Inglês', color: '#4f7fd0', re: /\b(ingles|english)\b/ },
+  { id: 'terapia', icon: 'terapia', label: 'Terapia', color: '#7a8f5a', re: /\b(terapia|psicolog\w*|psico)\b/ },
+  { id: 'escola', icon: 'escola', label: 'Escola', color: '#c2802f', re: /\b(escola|aula|reuniao|passeio|excursao)\b/ },
+  { id: 'outro', icon: 'pino', label: 'Compromisso', color: '#6b7b93', re: /./ },
 ];
 
 export function categorize(title) {

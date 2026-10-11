@@ -63,7 +63,7 @@ function keypad({ title, text, check }) {
     document.addEventListener('keydown', onKey);
     const keys = h('div', { class: 'keypad' });
     for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'])
-      keys.append(k === '' ? h('span', { class: 'key blank' }) : h('button', { class: 'key', type: 'button', 'aria-label': k === 'del' ? 'Apagar' : k, onClick: () => press(k) }, k === 'del' ? '⌫' : k));
+      keys.append(k === '' ? h('span', { class: 'key blank' }) : h('button', { class: 'key', type: 'button', 'aria-label': k === 'del' ? 'Apagar' : k, onClick: () => press(k) }, k === 'del' ? icon('backspace') : k));
     const sh = openSheet({ title, onClose: () => finish(false), content: h('div', { class: 'stack' }, text && h('p', { class: 'muted', style: { textAlign: 'center' } }, text), dots, keys) });
   });
 }
@@ -114,46 +114,44 @@ async function copyText(text) {
 }
 
 export function render(root, ctx) {
-  root.className = 'page plain';
+  root.className = 'page set-page';
   const st = syncStatus();
   const conn = getConn();
+  const sec = (title, ...kids) => h('section', { class: 'set-sec' }, h('h2', {}, title), ...kids);
+  const group = (...kids) => h('div', { class: 'set-group' }, ...kids);
+  const note = (t) => h('p', { class: 'set-note' }, t);
+  const field = (label, input) => h('label', { class: 'set-field' }, h('span', {}, label), input);
+  const btn = (label, { cls = '', ic, onClick }) => h('button', { class: 'sbtn ' + cls, type: 'button', onClick }, ic && icon(ic), label);
 
-  const head = h(
-    'header',
-    { class: 'p-head', style: { flexDirection: 'column', alignItems: 'flex-start', gap: '0' } },
-    h('button', { class: 'back-link', type: 'button', onClick: () => ctx.go('hoje') }, icon('back'), 'Voltar'),
-    h('h1', {}, 'Ajustes'),
-    h('p', { class: 'sub' }, 'Área dos pais')
-  );
+  const bar = h('header', { class: 'set-bar' }, h('button', { class: 'back', type: 'button', onClick: () => ctx.go('hoje') }, icon('left'), 'Voltar'), h('h1', {}, 'Ajustes'));
 
   // ===== Google Agenda =====
-  const agenda = h('section', { class: 'card' }, h('h3', {}, 'Google Agenda'));
-  const stack = h('div', { class: 'stack' });
-  stack.append(h('div', { class: 'status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('span', {}, st.connected ? (st.fetchedAt ? `Conectada · ${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Conectada · ainda não atualizada') : (st.count ? `Sem conexão · cópia com ${st.count} eventos · de ${ago(st.fetchedAt)}` : 'Não conectada'))));
-
+  const status = h('div', { class: 'set-status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('div', {}, st.connected ? (st.fetchedAt ? 'Conectada' : 'Conectada, ainda não atualizada') : st.count ? 'Sem conexão (usando cópia)' : 'Não conectada', h('small', {}, st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Os compromissos vêm do Google Agenda')));
+  const agendaKids = [status];
   if (!conn) {
-    const url = h('input', { class: 'field', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', 'aria-label': 'Endereço do Apps Script', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
-    const tok = h('input', { class: 'field', type: 'text', placeholder: 'token (texto longo)', 'aria-label': 'Token', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
-    const go = h('button', { class: 'btn primary', type: 'button', onClick: () => connect(url.value.trim(), tok.value.trim(), go, ctx) }, 'Conectar e testar');
-    const code = h('textarea', { class: 'field', rows: 3, placeholder: 'Cole aqui o link ou código de conexão', 'aria-label': 'Código de conexão', spellcheck: 'false' });
-    const useCode = h('button', { class: 'btn', type: 'button', onClick: () => {
+    const url = h('input', { class: 'set-in', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', 'aria-label': 'Endereço do Apps Script', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+    const tok = h('input', { class: 'set-in', type: 'text', placeholder: 'texto longo gerado pelo script', 'aria-label': 'Token', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+    const go = btn('Conectar e testar', { cls: 'primary', onClick: () => connect(url.value, tok.value, go, ctx) });
+    const code = h('textarea', { class: 'set-in', rows: 3, placeholder: 'Cole aqui o link ou código de conexão', 'aria-label': 'Código de conexão', spellcheck: 'false' });
+    const useCode = btn('Usar código', { onClick: () => {
       try {
         const c = decodeConn(code.value);
         connect(c.u, c.t, useCode, ctx);
       } catch (e) {
         toast(e.message);
       }
-    } }, 'Usar código');
-    stack.append(h('div', {}, h('span', { class: 'label' }, 'Endereço do app (Apps Script)'), url), h('div', {}, h('span', { class: 'label' }, 'Token'), tok), go, h('hr', { style: { border: 0, borderTop: '1px dashed var(--line)', width: '100%', margin: '2px 0' } }), h('div', {}, h('span', { class: 'label' }, 'Ou use um código de conexão'), code, h('p', { class: 'hint' }, 'É o código que o outro celular gerou em "Copiar link de conexão".')), useCode);
+    } });
+    agendaKids.push(field('Endereço do app (Apps Script)', url), field('Token', tok), h('div', { class: 'set-btns' }, go), field('Ou cole um código de conexão', code), h('div', { class: 'set-btns' }, useCode));
   } else {
-    const upd = h('button', { class: 'btn primary', type: 'button', onClick: async () => {
+    const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
       upd.disabled = true;
-      upd.textContent = 'Atualizando…';
+      upd.lastChild.textContent = 'Atualizando…';
       const r = await syncEvents();
       toast(r.ok ? `Pronto: ${r.count} eventos.` : (REASONS[r.reason] || 'Não deu certo agora.') + (r.detail ? ' [' + r.detail + ']' : ''));
       ctx.rerender();
-    } }, 'Atualizar agora');
-    const link = h('button', { class: 'btn', type: 'button', onClick: async () => {
+    } });
+    agendaKids.push(h('div', { class: 'set-btns' }, upd));
+    agendaKids.push(h('button', { class: 'set-row', type: 'button', onClick: async () => {
       const text = connLink(conn);
       if (navigator.share) {
         try {
@@ -162,48 +160,39 @@ export function render(root, ctx) {
         } catch {}
       }
       toast((await copyText(text)) ? 'Link copiado.' : 'Não consegui copiar.');
-    } }, icon('share'), 'Copiar link de conexão');
-    const off = h('button', { class: 'btn ghost', type: 'button', onClick: async () => {
+    } }, icon('link'), h('span', { class: 'tx' }, 'Copiar link de conexão', h('small', {}, 'Para conectar outro celular sem digitar')), icon('right')));
+    agendaKids.push(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
       if (await confirmSheet({ title: 'Desconectar?', text: 'A agenda some do app até conectar de novo. Seus dados da rotina e tarefas continuam.', yes: 'Desconectar', danger: true })) {
         setConn(null);
         localStorage.removeItem('caderno:v1:cache');
         resetIndex();
         ctx.rerender();
       }
-    } }, 'Desconectar');
-    stack.append(upd, link, h('p', { class: 'hint' }, 'O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.'), off);
+    } }, icon('close'), h('span', { class: 'tx' }, 'Desconectar a agenda')));
   }
+  const agenda = sec('Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
 
-  // palavras que indicam a casa
-  const kwPai = h('input', { class: 'field', type: 'text', value: state.settings.kwPai, 'aria-label': 'Palavras da casa do pai', autocapitalize: 'off', spellcheck: 'false' });
-  const kwMae = h('input', { class: 'field', type: 'text', value: state.settings.kwMae, 'aria-label': 'Palavras da casa da mãe', autocapitalize: 'off', spellcheck: 'false' });
-  kwPai.addEventListener('change', () => commit((s) => (s.settings.kwPai = kwPai.value.slice(0, 80)), { silent: true }));
-  kwMae.addEventListener('change', () => commit((s) => (s.settings.kwMae = kwMae.value.slice(0, 80)), { silent: true }));
-  stack.append(h('hr', { style: { border: 0, borderTop: '1px dashed var(--line)', width: '100%', margin: '2px 0' } }), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa do Papai'), kwPai), h('div', {}, h('span', { class: 'label' }, 'Palavras da casa da Mamãe'), kwMae), h('p', { class: 'hint' }, 'Eventos de dia inteiro com uma dessas palavras no título dizem em qual casa ele dorme. Separe por vírgula. Ex.: "André - pai" ou só "André" é reconhecido pela palavra "pai" ou "André".'));
-  agenda.append(stack);
+  // ===== casas =====
+  const kwPai = h('input', { class: 'set-in', type: 'text', value: state.settings.kwPai, 'aria-label': 'Palavras da casa do Papai', autocapitalize: 'off', spellcheck: 'false' });
+  const kwMae = h('input', { class: 'set-in', type: 'text', value: state.settings.kwMae, 'aria-label': 'Palavras da casa da Mamãe', autocapitalize: 'off', spellcheck: 'false' });
+  kwPai.addEventListener('change', () => commit((x) => (x.settings.kwPai = kwPai.value.slice(0, 80)), { silent: true }));
+  kwMae.addEventListener('change', () => commit((x) => (x.settings.kwMae = kwMae.value.slice(0, 80)), { silent: true }));
+  const casas = sec('Casas', group(field('Palavras da casa do Papai', kwPai), field('Palavras da casa da Mamãe', kwMae)), note('Eventos de dia inteiro com uma dessas palavras no título dizem em qual casa ele dorme. Separe por vírgula. Ex.: "André" ou "André - pai".'));
 
   // ===== backup =====
-  const backup = h('section', { class: 'card' }, h('h3', {}, 'Backup e outro celular'));
-  const bstack = h('div', { class: 'stack' });
   const incl = h('input', { type: 'checkbox' });
   const out = h('div', {});
-  const gen = h('button', { class: 'btn', type: 'button', onClick: async () => {
+  const gen = btn('Gerar código dos dados', { cls: 'primary', onClick: async () => {
     const code = await exportCode({ withConn: incl.checked });
-    const ta = h('textarea', { class: 'field selectable', rows: 4, readOnly: true, 'aria-label': 'Código dos dados' });
+    const ta = h('textarea', { class: 'set-in selectable', rows: 4, readOnly: true, 'aria-label': 'Código dos dados' });
     ta.value = code;
-    const copy = h('button', { class: 'btn sm', type: 'button', onClick: async () => toast((await copyText(code)) ? 'Código copiado.' : 'Segure no texto para copiar.') }, icon('copy'), 'Copiar');
-    const share = navigator.share ? h('button', { class: 'btn sm', type: 'button', onClick: () => navigator.share({ title: 'Caderno', text: code }).catch(() => {}) }, icon('share'), 'Enviar') : null;
-    out.replaceChildren(ta, h('div', { class: 'row-btns', style: { marginTop: '8px' } }, copy, share), h('p', { class: 'hint' }, `${code.length} caracteres.`));
+    const copy = btn('Copiar', { ic: 'copy', onClick: async () => toast((await copyText(code)) ? 'Código copiado.' : 'Segure no texto para copiar.') });
+    const share = navigator.share ? btn('Enviar', { ic: 'share', onClick: () => navigator.share({ title: 'Caderno', text: code }).catch(() => {}) }) : null;
+    out.replaceChildren(h('div', { class: 'set-field' }, ta, h('p', { class: 'set-note', style: { margin: '6px 0 0' } }, `${code.length} caracteres.`)), h('div', { class: 'set-btns' }, copy, share));
     ta.focus();
     ta.select();
-  } }, 'Gerar código dos dados');
-  bstack.append(
-    h('p', { class: 'muted small' }, 'Leva rotina, tarefas e histórico para outro celular (ou guarda uma cópia). Também leva uma cópia dos eventos da agenda já baixados, útil se este celular não conseguir falar com o Google.'),
-    h('label', { class: 'checkline' }, incl, h('span', {}, 'Incluir a conexão com o Google Agenda (contém o token: não compartilhe em lugar aberto)')),
-    gen,
-    out
-  );
-  const imp = h('textarea', { class: 'field', rows: 3, placeholder: 'Cole aqui um código do Caderno', 'aria-label': 'Código para importar', spellcheck: 'false' });
+  } });
+  const imp = h('textarea', { class: 'set-in', rows: 3, placeholder: 'Cole aqui um código do Caderno', 'aria-label': 'Código para importar', spellcheck: 'false' });
   const doImport = async (mode) => {
     let data;
     try {
@@ -220,33 +209,38 @@ export function render(root, ctx) {
     toast('Dados importados.');
     ctx.rerender();
   };
-  bstack.append(h('hr', { style: { border: 0, borderTop: '1px dashed var(--line)', width: '100%', margin: '2px 0' } }), h('div', {}, h('span', { class: 'label' }, 'Importar código'), imp), h('div', { class: 'row-btns' }, h('button', { class: 'btn', type: 'button', onClick: () => doImport('merge') }, 'Juntar'), h('button', { class: 'btn danger', type: 'button', onClick: () => doImport('replace') }, 'Substituir tudo')));
-  backup.append(bstack);
+  const backup = sec(
+    'Backup e outro celular',
+    group(
+      h('label', { class: 'set-check' }, incl, h('span', {}, 'Incluir a conexão com o Google Agenda (contém o token: não compartilhe em lugar aberto)')),
+      h('div', { class: 'set-btns' }, gen),
+      out,
+      field('Importar um código', imp),
+      h('div', { class: 'set-btns' }, btn('Juntar', { cls: 'primary', onClick: () => doImport('merge') }), btn('Substituir tudo', { cls: 'danger', onClick: () => doImport('replace') }))
+    ),
+    note('Leva rotina, tarefas, histórico e uma cópia dos eventos da agenda para outro celular (ou guarda um backup).')
+  );
 
   // ===== PIN =====
   const has = !!state.settings.pinHash;
-  const pin = h('section', { class: 'card' }, h('h3', {}, 'PIN dos ajustes'));
-  const pstack = h('div', { class: 'stack' });
-  pstack.append(h('p', { class: 'muted small' }, has ? 'Esta área pede PIN para abrir.' : 'Sem PIN: qualquer pessoa com o celular abre esta área.'));
-  pstack.append(h('div', { class: 'row-btns' }, h('button', { class: 'btn', type: 'button', onClick: async () => { if (await setPinFlow()) ctx.rerender(); } }, has ? 'Trocar PIN' : 'Definir PIN'), has && h('button', { class: 'btn ghost', type: 'button', onClick: async () => {
-    if (await confirmSheet({ title: 'Tirar o PIN?', text: 'Os ajustes passam a abrir sem pedir nada.', yes: 'Tirar PIN' })) commit((s) => { s.settings.pinHash = null; s.settings.pinSalt = null; });
-  } }, 'Tirar PIN')));
-  pstack.append(h('p', { class: 'hint' }, 'O PIN só evita mexidas sem querer. Quem tem acesso ao aparelho destravado ainda pode abrir os dados do navegador.'));
-  pin.append(pstack);
+  const pinRows = [h('button', { class: 'set-row', type: 'button', onClick: async () => { if (await setPinFlow()) ctx.rerender(); } }, icon('lock'), h('span', { class: 'tx' }, has ? 'Trocar PIN' : 'Definir PIN'), h('span', { class: 'val' }, has ? 'ativo' : 'desligado'), icon('right'))];
+  if (has)
+    pinRows.push(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
+      if (await confirmSheet({ title: 'Tirar o PIN?', text: 'Os ajustes passam a abrir sem pedir nada.', yes: 'Tirar PIN' })) commit((x) => { x.settings.pinHash = null; x.settings.pinSalt = null; });
+    } }, icon('close'), h('span', { class: 'tx' }, 'Tirar o PIN')));
+  const pin = sec('Segurança', group(...pinRows), note('O PIN só evita mexidas sem querer nesta área. Quem tem o aparelho destravado ainda pode abrir os dados do navegador.'));
 
   // ===== zerar =====
-  const reset = h('section', { class: 'card' }, h('h3', {}, 'Zerar'), h('div', { class: 'stack' }, h('p', { class: 'muted small' }, 'Apaga rotina, tarefas, histórico e a conexão com a agenda deste aparelho. Não dá para desfazer (gere um código antes, se quiser guardar).'), h('button', { class: 'btn danger', type: 'button', onClick: async () => {
-    if (!(await confirmSheet({ title: 'Apagar tudo?', text: 'Isso apaga todos os dados do Caderno neste aparelho.', yes: 'Apagar tudo', danger: true }))) return;
+  const reset = sec('Zerar', group(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
+    if (!(await confirmSheet({ title: 'Apagar tudo?', text: 'Isso apaga todos os dados do Caderno neste aparelho. Gere um código antes, se quiser guardar.', yes: 'Apagar tudo', danger: true }))) return;
     clearAllLocal();
     resetIndex();
     replaceState(getDefaults());
     toast('Tudo zerado.');
     ctx.go('hoje');
-  } }, icon('trash'), 'Apagar tudo deste aparelho')));
+  } }, icon('trash'), h('span', { class: 'tx' }, 'Apagar tudo deste aparelho'))));
 
-  const about = h('p', { class: 'hint', style: { textAlign: 'center', padding: '4px 0 8px' } }, `Caderno ${VERSION} · os dados ficam só neste aparelho. Para instalar: Compartilhar → Adicionar à Tela de Início.`);
-
-  root.append(head, h('div', { class: 'stack', style: { paddingTop: '6px' } }, agenda, backup, pin, reset, about));
+  root.append(h('div', { class: 'set' }, bar, agenda, casas, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`)));
 }
 
 async function connect(u, t, btn, ctx) {
