@@ -195,7 +195,6 @@ body.v-ajustes #page { background-color: #f2f2f7; }
 .wx-big .ico .a { fill-opacity: .95; }
 .wx-big .ico .s { stroke-width: 1.6; }
 .cover-top .cover-date { flex: 1; }
-.cover-date .wx-line { font-size: 14px; font-weight: var(--w-label); opacity: .95; margin-top: 3px; }
 
 /* semana: casa, tempo e o compromisso principal de cada dia */
 .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 14px; }
