@@ -65,6 +65,7 @@ function paintChrome() {
   const c = route === 'hoje' ? COVER_COLORS[document.body.dataset.cover] || COVER_COLORS.none : TOP_COLORS[route];
   document.documentElement.style.backgroundColor = c;
   document.body.style.backgroundColor = c;
+  try { localStorage.setItem('caderno-top', c); } catch {}
   let m = document.querySelector('meta[name=theme-color]');
   if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; document.head.append(m); }
   m.content = c;
