@@ -38,8 +38,8 @@
   --w-title: 800; --w-head: 700; --w-label: 600; --w-body: 400;
 
   --row: 44px;
-  --bar: 62px;      /* altura das abas (sem a área segura de baixo) */
-  --tabs-h: calc(var(--bar) + var(--safe-b));
+  --bar: 54px;      /* altura das abas (mais metade da área segura de baixo) */
+  --tabs-h: calc(var(--bar) + var(--safe-b) * .5);
   --rpad: 16px;
   --ml: 30px;       /* posição da margem vermelha */
   --pl: 44px;       /* início do texto nas páginas pautadas */
@@ -75,13 +75,14 @@ body.sheet-open #page { overflow: hidden; }
 #app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: var(--paper); overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
+  background-color: var(--paper);
   position: absolute; top: var(--top-h); bottom: 0; left: 0; right: 0;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
 #page::-webkit-scrollbar { display: none; }
 /* faixa sob a barra de status / Dynamic Island: mesma cor do topo da página */
-#app[data-area] { background: linear-gradient(var(--area) 0, var(--area) calc(var(--top-h) + 96px), var(--paper) calc(var(--top-h) + 96px)); }
-body.v-ajustes #app { background: linear-gradient(#0a6e3a 0, #0a6e3a calc(var(--top-h) + 60px), #f2f2f7 calc(var(--top-h) + 60px)); }
+#app[data-area] { background: var(--area); }
+body.v-ajustes #app { background: #0a6e3a; }
 #top { position: absolute; top: 0; left: 0; right: 0; height: var(--top-h); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
 body[data-cover] #top { background-color: var(--cv); }
 body.v-ajustes #top { background: #0a6e3a; }
@@ -95,7 +96,7 @@ body.v-ajustes #top { background: #0a6e3a; }
   display: flex; align-items: flex-end; gap: 5px; padding: 0 8px;
 }
 .tab {
-  position: relative; flex: 1 1 0; min-width: 0; height: calc(52px + var(--safe-b)); margin: 0; padding: 2px 0 calc(6px + var(--safe-b)); pointer-events: auto;
+  position: relative; flex: 1 1 0; min-width: 0; height: calc(46px + var(--safe-b) * .5); margin: 0; padding: 2px 0 calc(4px + var(--safe-b) * .5); pointer-events: auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   border: 0; border-radius: 14px 14px 0 0;
   background: var(--tab-l); color: var(--tab-d);
@@ -104,7 +105,7 @@ body.v-ajustes #top { background: #0a6e3a; }
 }
 .tab .ico { width: 24px; height: 24px; --acc: currentColor; }
 .tab .tlab { font-size: 13px; font-weight: var(--w-head); letter-spacing: .01em; line-height: 1; }
-.tab.on { height: calc(62px + var(--safe-b)); background: var(--tab); color: #fff; box-shadow: 0 -4px 10px rgba(40, 30, 10, .32), inset 0 2px 0 rgba(255, 255, 255, .25); z-index: 1; }
+.tab.on { height: calc(54px + var(--safe-b) * .5); background: var(--tab); color: #fff; box-shadow: 0 -4px 10px rgba(40, 30, 10, .32), inset 0 2px 0 rgba(255, 255, 255, .25); z-index: 1; }
 .tab[data-r='hoje'] { --tab: #1c8a4b; --tab-l: #8fd3aa; --tab-d: #0c4526; }
 .tab[data-r='mes'] { --tab: #0b8794; --tab-l: #86d4dc; --tab-d: #054850; }
 .tab[data-r='rotina'] { --tab: #d9780a; --tab-l: #f7be78; --tab-d: #623003; }
@@ -145,7 +146,7 @@ body.v-ajustes #top { background: #0a6e3a; }
 /* botões sobre o cabeçalho colorido */
 .p-head .icon-btn, .mhead .icon-btn { background: #fff; color: var(--area-d); border-color: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
 .p-head .icon-btn .ico, .mhead .icon-btn .ico { --acc: var(--area); }
-.p-head .icon-btn.on { background: var(--area-d); color: #fff; }
+.p-head .icon-btn.on { background: var(--area-d); color: #fff; border-color: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
 .p-head .icon-btn.on .ico { --acc: #fff; }
 
 /* ---------- botões redondos (ícone centralizado) ---------- */
@@ -180,6 +181,8 @@ body.v-ajustes #top { background: #0a6e3a; }
 body[data-cover], body[data-cover] #app { background-color: var(--cv); }
 body[data-cover] #app, body[data-cover] #top { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .055) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(0, 0, 0, .05) 0 2px, transparent 2px 5px); }
 body[data-cover='pai'] { --cv: var(--cv-pai); } body[data-cover='mae'] { --cv: var(--cv-mae); } body[data-cover='troca'] { --cv: var(--cv-troca); } body[data-cover='none'] { --cv: var(--cv-none); }
+body.v-ajustes #page { background-color: #f2f2f7; }
+#page.cover { background-color: transparent; }
 .page.cover {
   padding: 14px 16px calc(28px + var(--tabs-h)); color: #fff;
 }
