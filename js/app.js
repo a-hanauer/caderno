@@ -48,8 +48,10 @@ function render(animate) {
   }
   paintTabs();
   document.body.classList.toggle('v-ajustes', route === 'ajustes');
-  const col = { hoje: '#23804a', mes: '#3569b8', rotina: '#b45a10', tarefas: '#7048c0' }[route];
-  col && document.getElementById('edge').style.setProperty('--edge', col);
+  page.dataset.area = route;
+  if (route !== 'hoje') delete document.body.dataset.cover;
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) meta.content = route === 'hoje' ? getComputedStyle(document.body).getPropertyValue('--cv').trim() || '#475268' : route === 'ajustes' ? '#f2f2f7' : '#fcf8ec';
 }
 
 /** redesenho vindo de eventos em segundo plano: não atrapalha quem está digitando */
