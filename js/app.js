@@ -60,6 +60,7 @@ const COVER_COLORS = { pai: '#2d5fb4', mae: '#b53a77', troca: '#6a42b8', none: '
 function paintChrome() {
   const c = route === 'hoje' ? COVER_COLORS[document.body.dataset.cover] || COVER_COLORS.none : TOP_COLORS[route];
   document.documentElement.style.backgroundColor = c;
+  document.body.style.backgroundColor = c;
   let m = document.querySelector('meta[name=theme-color]');
   if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; document.head.append(m); }
   m.content = c;
