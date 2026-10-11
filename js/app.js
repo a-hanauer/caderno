@@ -51,6 +51,18 @@ function render(animate) {
   page.dataset.area = route;
   document.getElementById('app').dataset.area = route;
   if (route !== 'hoje') delete document.body.dataset.cover;
+  paintChrome();
+}
+
+/** cor do topo: tinge a barra de status / fundo do sistema (theme-color e fundo da página) com a cor do cabeçalho */
+const TOP_COLORS = { hoje: '#1c8a4b', mes: '#0b8794', rotina: '#d9780a', tarefas: '#7a3fd0', ajustes: '#0a6e3a' };
+const COVER_COLORS = { pai: '#2d5fb4', mae: '#b53a77', troca: '#6a42b8', none: '#475268' };
+function paintChrome() {
+  const c = route === 'hoje' ? COVER_COLORS[document.body.dataset.cover] || COVER_COLORS.none : TOP_COLORS[route];
+  document.documentElement.style.backgroundColor = c;
+  let m = document.querySelector('meta[name=theme-color]');
+  if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; document.head.append(m); }
+  m.content = c;
 }
 
 /** redesenho vindo de eventos em segundo plano: não atrapalha quem está digitando */
