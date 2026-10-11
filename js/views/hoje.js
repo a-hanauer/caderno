@@ -92,6 +92,32 @@ export function render(root, ctx) {
       prev = hh || prev;
     });
   }
+  // faixa discreta: onde dorme hoje e quando é a próxima troca
+  let houseLine = null;
+  {
+    const nome = (x) => (x === 'pai' ? 'casa do Papai' : x === 'mae' ? 'casa da Mamãe' : 'dia de troca');
+    let nd = null, nh = null;
+    for (let i = 1; i <= 45; i++) {
+      const d = addDays(t, i);
+      const x = houseOn(d);
+      if (x && x !== hs) { nd = d; nh = x; break; }
+    }
+    const quando = (d) => {
+      const n = diffDays(t, d);
+      if (n === 1) return 'amanhã';
+      if (n < 7) {
+        const w = weekdayName(d).replace('-feira', '');
+        return (/^(sábado|domingo)$/.test(w) ? 'no ' : 'na ') + w;
+      }
+      return `no dia ${parse(d).getDate()}`;
+    };
+    const quem = (x) => (x === 'pai' ? 'Papai' : x === 'mae' ? 'Mamãe' : 'dia de troca');
+    const parts = [];
+    if (hs) parts.push(h('span', { class: 'hl-a' }, icon('casa'), hs === 'troca' ? 'Hoje é dia de troca' : `Hoje na ${nome(hs)}`));
+    if (nd) parts.push(h('span', { class: 'hl-b' }, icon('troca'), hs ? `Troca ${quando(nd)} → ${quem(nh)}` : `${cap(quando(nd))}: ${nome(nh)}`));
+    if (parts.length) houseLine = h('p', { class: 'house-line' }, ...parts);
+  }
+
   if (!conn) {
     const warn = h('div', { class: 'week-empty' }, icon('casa'), h('span', { class: 'tx' }, 'Agenda não conectada'), h('button', { type: 'button', onClick: () => go('ajustes') }, 'Conectar'));
     week = week ? h('div', {}, week, warn) : warn;
@@ -130,7 +156,6 @@ export function render(root, ctx) {
   const soon = upcoming(t, 3, 7)[0];
   if (soon) cands.push({ p: 7, tag: soon.n === 0 ? 'Hoje' : soon.n === 1 ? 'Amanhã' : `${cap(DIAS_CURTOS[parse(soon.day).getDay()])} · ${countdown(soon.n)}`, title: soon.title, sub: soon.cat.label + (!soon.allDay ? ' · ' + soon.start.slice(11, 16) : ''), cat: soon.cat, go: soon.kind === 'task' ? 'tarefas' : 'mes' });
   const hsTomorrow = houseOn(addDays(t, 1));
-  if (hour >= 16 && hsTomorrow && hs && hsTomorrow !== hs) cands.push({ p: 2.5, tag: 'Amanhã', title: hsTomorrow === 'troca' ? 'Dia de troca de casa' : `Casa ${hsTomorrow === 'pai' ? 'do Papai' : 'da Mamãe'}`, sub: '', cat: { icon: 'troca', color: hsTomorrow === 'mae' ? 'var(--mae)' : 'var(--pai)' }, go: 'mes' });
   cands.sort((a, b) => a.p - b.p);
 
   let dayCard; // definido mais abaixo (o cartão rola até ele)
@@ -293,5 +318,5 @@ export function render(root, ctx) {
     nextBox = h('section', {}, h('h2', { class: 'sec-title' }, icon('mes'), 'Vem aí'), grid);
   }
 
-  root.append(head, week, nowCard, h('div', { class: 'stack' }, ontem, dayCard, nextBox));
+  root.append(head, week, houseLine, nowCard, h('div', { class: 'stack' }, ontem, dayCard, nextBox));
 }
