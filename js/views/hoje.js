@@ -53,12 +53,11 @@ export function render(root, ctx) {
   const wToday = wxDay(t);
   const wNow = wx && wx.cur && Date.now() - wx.at < 6 * 3600000 ? wx.cur : null;
   const kNow = wNow ? wxKind(wNow.code, wNow.day) : wToday ? wxKind(wToday.code, true) : null;
-  const wxLine = wToday && [wNow ? `${deg(wNow.t)} agora` : null, wToday.min !== null && wToday.max !== null ? `${deg(wToday.min)} a ${deg(wToday.max)}` : null, wToday.rain ? `chuva ${wToday.rain}%` : null].filter(Boolean).join(' · ');
   const head = h(
     'header',
     { class: 'cover-top' },
-    kNow && h('span', { class: 'wx-big', style: { '--acc': kNow.acc }, title: kNow.label, 'aria-label': kNow.label }, icon(kNow.icon)),
-    h('div', { class: 'cover-date' }, h('b', {}, cap(weekdayName(t))), h('span', {}, longDate(t).replace(/ de \d{4}$/, '')), wxLine && h('span', { class: 'wx-line' }, wxLine)),
+    kNow && h('span', { class: 'wx-big', style: { '--acc': kNow.acc }, title: kNow.label + (wNow ? ' · ' + deg(wNow.t) : ''), role: 'img', 'aria-label': kNow.label + (wNow ? ', ' + deg(wNow.t) : '') }, icon(kNow.icon)),
+    h('div', { class: 'cover-date' }, h('b', {}, cap(weekdayName(t))), h('span', {}, longDate(t).replace(/ de \d{4}$/, ''))),
     h('button', { class: 'icon-btn sm gear', type: 'button', 'aria-label': 'Ajustes (área dos pais)', onClick: () => go('ajustes') }, icon('gear'))
   );
 
