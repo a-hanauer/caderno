@@ -224,7 +224,14 @@ document.addEventListener('visibilitychange', () => !document.hidden && checkUpd
 checkUpdate();
 
 navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {});
+// O service worker (modo offline) só roda no app da Tela de Início. No Safari ele fica desligado:
+// no iOS 26/27, com service worker ativo, "Adicionar à Tela de Início" não pega o ícone e mostra só a letra "C".
+const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  if (standalone) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  else {
+    navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+    window.caches && caches.keys().then((ks) => ks.filter((k) => k.startsWith('caderno-')).forEach((k) => caches.delete(k))).catch(() => {});
+  }
 }
 
