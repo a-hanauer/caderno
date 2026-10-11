@@ -72,6 +72,9 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
+html.fullbug { height: auto; min-height: calc(100lvh + 80px); overflow-y: scroll; scrollbar-width: none; }
+html.fullbug body { height: auto; min-height: calc(100lvh + 80px); }
+html.fullbug #page { overscroll-behavior: contain; }
 #app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
