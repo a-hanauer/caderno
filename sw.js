@@ -1,11 +1,10 @@
 // Service worker: deixa o Caderno funcionar sem internet.
 // Estratégia: rede primeiro (sempre a versão mais nova quando há internet), com a cópia
 // guardada como reserva sem internet. Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v27';
+const VERSION = 'caderno-v28';
 const SHELL = [
   './',
   './index.html',
-  './manifest.webmanifest',
   './css/app.css',
   './fonts/PlaypenSans.ttf',
   './js/app.js',
@@ -21,8 +20,6 @@ const SHELL = [
   './js/views/rotina.js',
   './js/views/tarefas.js',
   './js/views/ajustes.js',
-  './apple-touch-icon-v2.png',
-  './icons/favicon-32.png',
 ];
 
 self.addEventListener('install', (e) => {
@@ -43,6 +40,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Google Agenda etc.: direto na rede
+  // ícones e manifesto ficam fora do service worker: o iOS busca o ícone da tela de início direto da rede
+  if (/\.(png|webmanifest|json)$/.test(url.pathname)) return;
 
   // fonte e ícones quase nunca mudam: cópia guardada primeiro
   const stable = /\/(fonts|icons)\//.test(url.pathname);
