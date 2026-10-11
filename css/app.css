@@ -45,7 +45,7 @@
   --pl: 44px;       /* início do texto nas páginas pautadas */
   --ic: 18px;       /* ícones do calendário */
   --safe-t: var(--sat, env(safe-area-inset-top, 0px));
-  --safe-b: var(--sab-x, var(--sab, env(safe-area-inset-bottom, 0px)));
+  --safe-b: var(--sab, env(safe-area-inset-bottom, 0px));
   --top-gap: 14px;  /* respiro entre a Dynamic Island e o início do cabeçalho */
   --top-h: calc(var(--safe-t) + var(--top-gap));
 }
@@ -72,6 +72,9 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
+html.fullbug, html.fullbug body { height: var(--full); overflow: hidden; }
+html.fullbug #app { position: absolute; bottom: auto; height: var(--full); }
+html.fullbug .sheet-wrap { position: absolute; bottom: auto; height: var(--full); }
 #app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
@@ -125,7 +128,7 @@ body.v-ajustes #top { background: #0a6e3a; }
 .page.plain { padding: 0 var(--rpad) calc(8px + var(--tabs-h)) 16px; }
 .page.fit { display: flex; flex-direction: column; overflow: hidden; }
 .page.ruled {
-  padding: 0; display: flex; flex-direction: column; min-height: 100%;
+  padding: 0; display: flex; flex-direction: column;
   background-image: linear-gradient(90deg, transparent calc(var(--ml) - 1px), var(--margin) calc(var(--ml) - 1px), var(--margin) calc(var(--ml) + 1px), transparent calc(var(--ml) + 1px));
   background-attachment: local;
 }

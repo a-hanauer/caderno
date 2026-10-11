@@ -23,11 +23,12 @@
       if (t > (s.t || 0)) { s.t = t; ch = true; }
       if (b > (s.b || 0)) { s.b = b; ch = true; }
       if (ch) { try { localStorage.setItem(K, JSON.stringify(s)); } catch (e) {} ap(); }
-      /* iOS 26/27 (bug): às vezes a página vai até o topo, mas termina ~60px antes da borda de baixo — e não dá
-         para pintar ali. Nesse caso a barra de início fica fora da página: as abas não precisam do respiro de baixo. */
+      /* iOS 26/27 (bug): a página vai até o topo, mas a "janela" informada termina ~60px antes da borda de baixo.
+         Elementos position:fixed são cortados nessa janela; o fundo da página não. Então, nesse caso, o app deixa
+         de ser fixed e passa a ter a altura física da tela (classe html.fullbug). */
       var full = Math.max(screen.width, screen.height);
-      if (app && (s.t || 0) > 0 && innerHeight < full - 10) r.style.setProperty('--sab-x', '0px');
-      else r.style.removeProperty('--sab-x');
+      if (app && (s.t || 0) > 0 && innerHeight < full - 10) { r.classList.add('fullbug'); r.style.setProperty('--full', full + 'px'); }
+      else { r.classList.remove('fullbug'); r.style.removeProperty('--full'); }
     }
     measure();
     addEventListener('DOMContentLoaded', measure);
