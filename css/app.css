@@ -46,6 +46,8 @@
   --ic: 18px;       /* ícones do calendário */
   --safe-t: var(--sat, env(safe-area-inset-top, 0px));
   --safe-b: var(--sab, env(safe-area-inset-bottom, 0px));
+  --top-gap: 14px;  /* respiro entre a Dynamic Island e o início do cabeçalho */
+  --top-h: calc(var(--safe-t) + var(--top-gap));
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -70,17 +72,18 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
+html.app #app { bottom: auto; height: var(--app-h, 100lvh); }
 #app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: var(--paper); overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
-  position: absolute; top: var(--safe-t); bottom: 0; left: 0; right: 0;
+  position: absolute; top: var(--top-h); bottom: 0; left: 0; right: 0;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
 #page::-webkit-scrollbar { display: none; }
 /* faixa sob a barra de status / Dynamic Island: mesma cor do topo da página */
-#app[data-area] { background: linear-gradient(var(--area) 0, var(--area) calc(var(--safe-t) + 96px), var(--paper) calc(var(--safe-t) + 96px)); }
-body.v-ajustes #app { background: linear-gradient(#0a6e3a 0, #0a6e3a calc(var(--safe-t) + 60px), #f2f2f7 calc(var(--safe-t) + 60px)); }
-#top { position: absolute; top: 0; left: 0; right: 0; height: var(--safe-t); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
+#app[data-area] { background: linear-gradient(var(--area) 0, var(--area) calc(var(--top-h) + 96px), var(--paper) calc(var(--top-h) + 96px)); }
+body.v-ajustes #app { background: linear-gradient(#0a6e3a 0, #0a6e3a calc(var(--top-h) + 60px), #f2f2f7 calc(var(--top-h) + 60px)); }
+#top { position: absolute; top: 0; left: 0; right: 0; height: var(--top-h); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
 body[data-cover] #top { background-color: var(--cv); }
 body.v-ajustes #top { background: #0a6e3a; }
 #page.enter { animation: pageIn .22s ease-out; }
@@ -387,6 +390,7 @@ button.tl-head .chev { color: var(--muted); transition: transform .2s; width: 20
 .legend i { width: 16px; height: 10px; border-radius: 2px; display: inline-block; }
 
 /* ---------- folha (sheet) ---------- */
+html.app .sheet-wrap { inset: auto; top: 0; left: 0; right: 0; height: var(--app-h, 100lvh); }
 .sheet-wrap { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
 .sheet-wrap.open { pointer-events: auto; }
 .sheet-back { position: absolute; inset: 0; background: rgba(36, 30, 18, .5); opacity: 0; transition: opacity .2s; }
