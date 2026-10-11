@@ -113,6 +113,19 @@ async function copyText(text) {
   }
 }
 
+function diag() {
+  const r = document.documentElement;
+  const cs = getComputedStyle(r);
+  const p = document.createElement('div');
+  p.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+  r.appendChild(p);
+  const pc = getComputedStyle(p);
+  const env = `${Math.round(parseFloat(pc.paddingTop) || 0)}/${Math.round(parseFloat(pc.paddingBottom) || 0)}`;
+  p.remove();
+  const mode = r.classList.contains('app') ? 'app' : 'navegador';
+  return `diag: ${mode} · env ${env} · guardado ${r.style.getPropertyValue('--sat') || 0}/${r.style.getPropertyValue('--sab') || 0} · tela ${innerWidth}x${innerHeight} (${screen.width}x${screen.height}) · topo ${cs.getPropertyValue('--safe-t').trim()}`;
+}
+
 export function render(root, ctx) {
   root.className = 'page set-page';
   const st = syncStatus();
@@ -240,7 +253,7 @@ export function render(root, ctx) {
     ctx.go('hoje');
   } }, icon('trash'), h('span', { class: 'tx' }, 'Apagar tudo deste aparelho'))));
 
-  root.append(h('div', { class: 'set' }, bar, agenda, casas, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`)));
+  root.append(h('div', { class: 'set' }, bar, agenda, casas, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
 }
 
 async function connect(u, t, btn, ctx) {
