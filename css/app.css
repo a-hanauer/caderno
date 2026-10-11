@@ -72,9 +72,12 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
-html.fullbug, html.fullbug body { height: var(--full); overflow: hidden; }
-html.fullbug #app { position: absolute; bottom: auto; height: var(--full); }
-html.fullbug .sheet-wrap { position: absolute; bottom: auto; height: var(--full); }
+/* iOS 26/27 (bug): a área da página termina ~60px antes da borda de baixo e não dá para pintar ali.
+   As abas viram uma barra flutuante, para a faixa de baixo parecer intencional. */
+html.fullbug { --safe-b: 0px; }
+html.fullbug #tabs { height: calc(var(--bar) + 8px); padding: 0 10px 8px; }
+html.fullbug .tab { height: 52px; padding-bottom: 4px; border-radius: 14px; }
+html.fullbug .tab.on { height: 60px; }
 #app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
