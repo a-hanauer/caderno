@@ -23,7 +23,9 @@ const NOTE_BY_CAT = { prova: 'p', trabalho: 'y', niver: 'b', data: 'v' };
 let openState = { day: '', map: {} }; // blocos que o usuário abriu/fechou hoje
 let celebratedDay = '';
 
-export function leave() {}
+export function leave() {
+  delete document.body.dataset.cover;
+}
 
 function greeting(hour) {
   return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
@@ -31,7 +33,7 @@ function greeting(hour) {
 
 export function render(root, ctx) {
   const { go } = ctx;
-  root.className = 'page dots';
+  root.className = 'page cover';
   const t = today();
   const log = ensureLog(t);
   const st0 = syncStatus();
@@ -41,17 +43,21 @@ export function render(root, ctx) {
   const nowMin = hour * 60 + now.getMinutes();
   if (openState.day !== t) openState = { day: t, map: {} };
 
-  // ----- cabeçalho -----
-  const head = h(
-    'header',
-    { class: 'p-head' },
-    h('div', {}, h('h1', {}, cap(weekdayName(t))), h('p', { class: 'sub' }, `${longDate(t).replace(/ de \d{4}$/, '')} · ${greeting(hour).toLowerCase()}!`)),
-    h('button', { class: 'icon-btn sm quiet', type: 'button', 'aria-label': 'Ajustes (área dos pais)', onClick: () => go('ajustes') }, icon('gear'))
-  );
-
-  // ----- a casa em destaque -----
+  // ----- capa -----
   const hs = houseOn(t);
   const hsTomorrow = houseOn(addDays(t, 1));
+  document.body.dataset.cover = hs || 'none';
+  const nome = (state.profile && state.profile.name) || 'Caderno';
+  const head = h(
+    'header',
+    { class: 'cover-top' },
+    h('div', { class: 'label-card' }, h('small', {}, 'Caderno do'), h('strong', {}, nome)),
+    h('button', { class: 'icon-btn sm gear', type: 'button', 'aria-label': 'Ajustes (área dos pais)', onClick: () => go('ajustes') }, icon('gear'))
+  );
+
+  const dateLine = h('p', { class: 'cover-date' }, `${cap(weekdayName(t))}, ${longDate(t).replace(/ de \d{4}$/, '')} · ${greeting(hour).toLowerCase()}!`);
+
+  // ----- a casa em destaque -----
   let hero;
   if (hs) {
     const days = h('div', { class: 'hero-days', 'aria-label': 'Casa nos próximos 7 dias' });
@@ -202,5 +208,5 @@ export function render(root, ctx) {
     nextBox = h('section', {}, h('h2', { class: 'sec-title' }, icon('mes'), 'Vem aí'), grid);
   }
 
-  root.append(head, h('div', { class: 'stack' }, hero, ontem, dayCard, nextBox));
+  root.append(head, dateLine, h('div', { class: 'stack' }, hero, ontem, dayCard, nextBox));
 }
