@@ -177,6 +177,7 @@ subscribe(() => {
 window.addEventListener('hashchange', onHash);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
+    if (document.documentElement.classList.contains('fullbug')) setTimeout(() => window.scrollTo(0, 80), 60);
     tick();
     maybeSync(false);
     maybeWx(false);
