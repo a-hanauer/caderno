@@ -222,6 +222,9 @@ body.v-ajustes #page { background-color: #f2f2f7; }
 .wd .swap .ico { width: 12px; height: 12px; }
 .wd .evb { position: absolute; top: -7px; right: -5px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: var(--c); --acc: var(--c); display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); z-index: 2; }
 .wd .evb .ico { width: 15px; height: 15px; }
+.house-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: -4px 2px 14px; font-size: 14px; font-weight: var(--w-label); color: rgba(255, 255, 255, .92); }
+.house-line > span { display: inline-flex; align-items: center; gap: 6px; }
+.house-line .ico { width: 17px; height: 17px; --acc: #fff; }
 .week-empty { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(0, 0, 0, .2); font-size: 15px; font-weight: var(--w-label); }
 .week-empty .ico { width: 22px; height: 22px; --acc: #fff; }
 .week-empty .tx { flex: 1; min-width: 0; }
