@@ -250,6 +250,8 @@ export function render(root, ctx) {
 }
 
 async function connect(u, t, btn, ctx) {
+  u = String(u).replace(/\s+/g, ''); // espaços e quebras de linha colados por engano
+  t = String(t).replace(/\s+/g, '');
   if (!validConnUrl(u)) return toast('O endereço precisa começar com https://script.google.com/');
   if (t.length < 16) return toast('O token parece curto demais. Copie o texto inteiro.');
   const label = btn.textContent;

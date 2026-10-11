@@ -159,7 +159,7 @@ export function decodeConn(text) {
   try {
     const o = JSON.parse(dec.decode(fromB64u(code.split('.')[1])));
     if (typeof o.u !== 'string' || typeof o.t !== 'string') throw new Error();
-    return { u: o.u.trim(), t: o.t.trim() };
+    return { u: o.u.replace(/\s+/g, ''), t: o.t.replace(/\s+/g, '') };
   } catch {
     throw new Error('O código de conexão parece incompleto.');
   }
