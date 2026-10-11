@@ -65,7 +65,7 @@ const WHENS = ['todos', 'escola', 'fds'];
 function sanitizePayload(o) {
   const out = {
     profile: { name: str(o.profile?.name || 'Sebastião', 30) },
-    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai, andré, andre', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae, aline', 80) },
+    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai, andré, andre', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae, aline', 80), wx: o.settings?.wx && typeof o.settings.wx.lat === 'number' && typeof o.settings.wx.lon === 'number' && Math.abs(o.settings.wx.lat) <= 90 && Math.abs(o.settings.wx.lon) <= 180 ? { name: str(o.settings.wx.name, 60), lat: o.settings.wx.lat, lon: o.settings.wx.lon } : null },
     routine: [],
     tasks: [],
     log: {},

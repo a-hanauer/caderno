@@ -189,19 +189,37 @@ body.v-ajustes #page { background-color: #f2f2f7; }
 .cover-date b { display: block; font-size: 30px; font-weight: var(--w-title); line-height: 1.05; text-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
 .cover-date span { display: block; font-size: 17px; font-weight: var(--w-label); opacity: .92; margin-top: 2px; }
 
-/* semana: casa de cada dia */
+/* tempo de hoje, ao lado da data */
+.wx-big { width: 60px; height: 60px; flex: none; display: grid; place-items: center; margin: -2px -4px 0 -6px; color: #fff; }
+.wx-big .ico { width: 56px; height: 56px; }
+.wx-big .ico .a { fill-opacity: .95; }
+.wx-big .ico .s { stroke-width: 1.6; }
+.cover-top .cover-date { flex: 1; }
+.cover-date .wx-line { font-size: 14px; font-weight: var(--w-label); opacity: .95; margin-top: 3px; }
+
+/* semana: casa, tempo e o compromisso principal de cada dia */
 .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 14px; }
-.wd { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 7px; border-radius: 10px; background: rgba(0, 0, 0, .2); font-size: 12px; line-height: 1.1; min-width: 0; }
-.wd i { font-style: normal; font-weight: var(--w-label); opacity: .9; }
-.wd b { font-weight: var(--w-head); font-size: 16px; }
-.wd .bar { width: 60%; height: 5px; border-radius: 3px; background: var(--c, transparent); margin-top: 2px; }
+.wd { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 0 6px; border: 0; border-radius: 12px; background: rgba(0, 0, 0, .2); color: #fff; font-size: 12px; line-height: 1.1; min-width: 0; }
+.wd:active { transform: translateY(1px); }
+.wd i { font-style: normal; font-weight: var(--w-label); opacity: .9; font-size: 11px; }
+.wd b { font-weight: var(--w-head); font-size: 17px; }
+.wd .wxs { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: 3px; min-height: 36px; color: #fff; }
+.wd .wxs .ico { width: 22px; height: 22px; }
+.wd .wxs .ico .a { fill-opacity: .9; }
+.wd .wxs em { font-style: normal; font-size: 12px; font-weight: var(--w-head); }
+.wd .wxs.empty { min-height: 6px; }
+.wd .bar { width: 64%; height: 5px; border-radius: 3px; background: var(--c, transparent); margin-top: 4px; }
 .wd.pai { --c: #8ab8f6; } .wd.mae { --c: #f59cc6; } .wd.troca { --c: #c2a6f3; }
 .wd.none .bar { background: rgba(255, 255, 255, .25); }
 .wd.today { background: #fff; color: var(--ink); box-shadow: 0 3px 0 rgba(0, 0, 0, .25); }
-.wd.today small { font-size: 11px; font-weight: var(--w-head); color: #fff; background: var(--c2, var(--none)); border-radius: 99px; padding: 1px 6px; margin-top: 1px; }
-.wd.today.pai { --c2: var(--pai); } .wd.today.mae { --c2: var(--mae); } .wd.today.troca { --c2: var(--troca); }
-.wd .swap { position: absolute; top: -8px; left: -11.5px; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: var(--ink); display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); z-index: 1; }
+.wd.today i { font-weight: var(--w-head); opacity: 1; }
+.wd.today .wxs { color: var(--ink); }
+.wd.today .wxs .ico .a { fill-opacity: .6; }
+.wd.today.pai { --c: var(--pai); } .wd.today.mae { --c: var(--mae); } .wd.today.troca { --c: var(--troca); }
+.wd .swap { position: absolute; bottom: -5px; left: -11.5px; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: var(--ink); display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); z-index: 1; }
 .wd .swap .ico { width: 12px; height: 12px; }
+.wd .evb { position: absolute; top: -7px; right: -5px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: var(--c); --acc: var(--c); display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); z-index: 2; }
+.wd .evb .ico { width: 15px; height: 15px; }
 .week-empty { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(0, 0, 0, .2); font-size: 15px; font-weight: var(--w-label); }
 .week-empty .ico { width: 22px; height: 22px; --acc: #fff; }
 .week-empty .tx { flex: 1; min-width: 0; }
@@ -392,7 +410,8 @@ button.tl-head .chev { color: var(--muted); transition: transform .2s; width: 20
 .mhead { background: var(--area); color: #fff; margin: 0 -16px 10px; box-shadow: 0 3px 0 rgba(0, 0, 0, .16); display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 10px 16px 10px; flex: none; }
 .mhead h1 { font-size: 30px; line-height: 1; text-align: center; flex: 1; font-weight: var(--w-title); color: #fff; }
 .mhead h1 small { display: block; font-size: 16px; color: rgba(255, 255, 255, .9); font-weight: 400; margin-top: 2px; }
-.mhead .go-today { font-size: 14px; border: 1.5px solid var(--ink-soft); border-radius: 99px; background: var(--paper-3); padding: 2px 10px; margin-top: 3px; font-weight: var(--w-label); }
+.mhead .go-today { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border: 0; border-radius: 99px; background: #fff; color: var(--area-d); padding: 5px 12px 5px 9px; font-family: var(--body); font-size: 15px; font-weight: var(--w-head); line-height: 1; box-shadow: 0 2px 0 rgba(0, 0, 0, .22); }
+.mhead .go-today .ico { width: 18px; height: 18px; --acc: var(--area); }
 .wk { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 14px; font-weight: var(--w-head); color: var(--ink-soft); padding-bottom: 4px; flex: none; }
 .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(var(--rows, 5), 1fr); border: 2px solid var(--ink-soft); border-radius: 8px; overflow: hidden; background: var(--paper-3); }
 .cell {

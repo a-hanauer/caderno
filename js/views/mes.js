@@ -42,7 +42,7 @@ export function render(root, ctx) {
     'header',
     { class: 'mhead' },
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Mês anterior', onClick: () => shift(-1) }, icon('left')),
-    h('h1', {}, cap(MESES[view.m]), h('small', {}, String(view.y)), !isCurrent && h('button', { class: 'go-today', type: 'button', onClick: () => { enter(); ctx.rerender(); } }, 'voltar pra hoje')),
+    h('h1', {}, cap(MESES[view.m]), h('small', {}, String(view.y)), !isCurrent && h('button', { class: 'go-today', type: 'button', onClick: () => { enter(); ctx.rerender(); } }, icon('mes'), 'Voltar para hoje')),
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Próximo mês', onClick: () => shift(1) }, icon('right'))
   );
 
@@ -82,7 +82,7 @@ export function render(root, ctx) {
   root.append(head, wk, grid, legend);
 }
 
-function openDay(d, ctx) {
+export function openDay(d, ctx) {
   selected = d;
   ctx.rerender();
   const t = today();

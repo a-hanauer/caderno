@@ -1,6 +1,6 @@
 // Utilitários: datas (sempre no fuso local do aparelho), DOM e textos em pt-BR.
 
-export const VERSION = 'v22';
+export const VERSION = 'v23';
 
 export const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 export const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];

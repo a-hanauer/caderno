@@ -1,7 +1,9 @@
 // Tela "Hoje": onde o Sebastião dorme, a linha do dia (agenda + rotina + tarefas) e o que vem aí.
 import { state, commit, ensureLog, dayStats, streak, toggleRoutine, toggleTask, BLOCOS } from '../store.js';
 import { today, addDays, parse, cap, longDate, weekdayName, countdown, shortDate, INICIAIS, DIAS_CURTOS, diffDays, h } from '../util.js';
-import { eventsOn, houseOn, upcoming, HOUSE, syncStatus, tasksOn } from '../events.js';
+import { eventsOn, houseOn, upcoming, HOUSE, syncStatus, tasksOn, itemsOn } from '../events.js';
+import { getWx, wxDay, wxKind, deg } from '../weather.js';
+import { openDay } from './mes.js';
 import { icon, checkbox, celebrate } from '../ui.js';
 
 /** transforma um cartão em botão acessível (div, para poder conter títulos e listas) */
@@ -46,37 +48,54 @@ export function render(root, ctx) {
   // ----- capa: data + semana (casa de cada dia) -----
   const hs = houseOn(t);
   document.body.dataset.cover = hs || 'none';
+  // tempo de hoje (se houver cidade nos Ajustes)
+  const wx = getWx();
+  const wToday = wxDay(t);
+  const wNow = wx && wx.cur && Date.now() - wx.at < 6 * 3600000 ? wx.cur : null;
+  const kNow = wNow ? wxKind(wNow.code, wNow.day) : wToday ? wxKind(wToday.code, true) : null;
+  const wxLine = wToday && [wNow ? `${deg(wNow.t)} agora` : null, wToday.min !== null && wToday.max !== null ? `${deg(wToday.min)} a ${deg(wToday.max)}` : null, wToday.rain ? `chuva ${wToday.rain}%` : null].filter(Boolean).join(' · ');
   const head = h(
     'header',
     { class: 'cover-top' },
-    h('div', { class: 'cover-date' }, h('b', {}, cap(weekdayName(t))), h('span', {}, longDate(t).replace(/ de \d{4}$/, ''))),
+    kNow && h('span', { class: 'wx-big', style: { '--acc': kNow.acc }, title: kNow.label, 'aria-label': kNow.label }, icon(kNow.icon)),
+    h('div', { class: 'cover-date' }, h('b', {}, cap(weekdayName(t))), h('span', {}, longDate(t).replace(/ de \d{4}$/, '')), wxLine && h('span', { class: 'wx-line' }, wxLine)),
     h('button', { class: 'icon-btn sm gear', type: 'button', 'aria-label': 'Ajustes (área dos pais)', onClick: () => go('ajustes') }, icon('gear'))
   );
 
+  // semana: casa, tempo e o compromisso mais importante de cada dia (toque abre o dia)
+  const RANK = { prova: 1, trabalho: 2, niver: 3, data: 4, tarefa: 5 };
   let week;
-  const anyHouse = Array.from({ length: 7 }, (_, i) => houseOn(addDays(t, i))).some(Boolean);
-  if (anyHouse) {
-    week = h('div', { class: 'week', role: 'list', 'aria-label': 'Casa nos próximos 7 dias' });
+  const days7 = Array.from({ length: 7 }, (_, i) => addDays(t, i));
+  const anyHouse = days7.some((d) => houseOn(d));
+  if (anyHouse || wx || conn) {
+    week = h('div', { class: 'week', role: 'list', 'aria-label': 'Próximos 7 dias' });
     let prev = houseOn(addDays(t, -1));
-    for (let i = 0; i < 7; i++) {
-      const d = addDays(t, i);
+    days7.forEach((d, i) => {
       const hh = houseOn(d);
       const dt = parse(d);
       const changed = i > 0 && hh && prev && hh !== prev;
-      week.append(
-        h(
-          'div',
-          { class: ['wd', hh || 'none', i === 0 && 'today'].filter(Boolean).join(' '), role: 'listitem', 'aria-label': `${cap(weekdayName(d))}${hh ? ': ' + HOUSE[hh].nome : ''}` },
-          changed && h('span', { class: 'swap', 'aria-hidden': 'true' }, icon('troca')),
-          h('i', {}, INICIAIS[dt.getDay()]),
-          h('b', {}, dt.getDate()),
-          i === 0 ? h('small', {}, hh === 'pai' ? 'Papai' : hh === 'mae' ? 'Mamãe' : hh === 'troca' ? 'troca' : '—') : h('span', { class: 'bar' })
-        )
+      const w = wxDay(d);
+      const k = w ? wxKind(w.code, true) : null;
+      const its = itemsOn(d);
+      const top = its.slice().sort((a, b) => (RANK[a.cat.id] || 9) - (RANK[b.cat.id] || 9))[0];
+      const label = `${cap(weekdayName(d))}, ${dt.getDate()}${hh ? '. ' + HOUSE[hh].nome : ''}${k ? '. ' + k.label + (w.max !== null ? ' ' + deg(w.max) : '') : ''}${its.length ? `. ${its.length} compromisso${its.length > 1 ? 's' : ''}` : ''}`;
+      const cell = h(
+        'button',
+        { class: ['wd', hh || 'none', i === 0 && 'today'].filter(Boolean).join(' '), type: 'button', role: 'listitem', 'aria-label': label, onClick: () => openDay(d, ctx) },
+        changed && h('span', { class: 'swap', 'aria-hidden': 'true' }, icon('troca')),
+        top && h('span', { class: 'evb', style: { '--c': top.cat.color }, 'aria-hidden': 'true' }, icon(top.cat.icon)),
+        h('i', {}, i === 0 ? 'hoje' : INICIAIS[dt.getDay()]),
+        h('b', {}, dt.getDate()),
+        k ? h('span', { class: 'wxs', style: { '--acc': k.acc } }, icon(k.icon), h('em', {}, deg(w.max))) : h('span', { class: 'wxs empty' }),
+        h('span', { class: 'bar' })
       );
+      week.append(cell);
       prev = hh || prev;
-    }
-  } else {
-    week = h('div', { class: 'week-empty' }, icon('casa'), h('span', { class: 'tx' }, conn ? 'Nenhuma casa marcada esta semana' : 'Agenda não conectada'), !conn && h('button', { type: 'button', onClick: () => go('ajustes') }, 'Conectar'));
+    });
+  }
+  if (!conn) {
+    const warn = h('div', { class: 'week-empty' }, icon('casa'), h('span', { class: 'tx' }, 'Agenda não conectada'), h('button', { type: 'button', onClick: () => go('ajustes') }, 'Conectar'));
+    week = week ? h('div', {}, week, warn) : warn;
   }
 
   // ----- agora / próximo: o que importa neste momento -----
