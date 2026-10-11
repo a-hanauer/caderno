@@ -23,12 +23,15 @@
       if (t > (s.t || 0)) { s.t = t; ch = true; }
       if (b > (s.b || 0)) { s.b = b; ch = true; }
       if (ch) { try { localStorage.setItem(K, JSON.stringify(s)); } catch (e) {} ap(); }
+      /* no atalho, a janela às vezes termina acima da borda de baixo: usa a altura física da tela */
+      if (app) r.style.setProperty('--app-h', Math.max(innerHeight, Math.max(screen.width, screen.height)) + 'px');
     }
     measure();
     addEventListener('DOMContentLoaded', measure);
     addEventListener('load', measure);
     addEventListener('pageshow', function () { measure(); setTimeout(measure, 300); });
     addEventListener('resize', function () { setTimeout(measure, 200); });
+    addEventListener('orientationchange', function () { setTimeout(measure, 300); });
   })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">

@@ -1,7 +1,7 @@
 // Service worker: deixa o Caderno funcionar sem internet.
 // Estratégia: responde na hora com a cópia guardada e atualiza em segundo plano
 // (a versão nova aparece na abertura seguinte). Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v15';
+const VERSION = 'caderno-v16';
 const SHELL = [
   './',
   './index.html',
