@@ -72,7 +72,7 @@ body.sheet-open #page { overflow: hidden; }
 .ico .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- estrutura: tela inteira ---------- */
-#app { position: fixed; top: 0; bottom: 0; left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
+#app { position: fixed; top: 0; bottom: var(--app-b, 0); height: var(--app-h, auto); left: 0; right: 0; max-width: 640px; margin: 0 auto; background: transparent; overflow: hidden; }
 @media (min-width: 700px) { body { background: #d9d1ba; } #app { box-shadow: 0 0 40px rgba(0, 0, 0, .25); } }
 #page {
   background-color: var(--paper);
@@ -460,7 +460,7 @@ button.tl-head .chev { color: var(--muted); transition: transform .2s; width: 20
 .legend i { width: 20px; height: 5px; border-radius: 3px; display: inline-block; }
 
 /* ---------- folha (sheet) ---------- */
-.sheet-wrap { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+.sheet-wrap { position: fixed; inset: 0; bottom: var(--app-b, 0); height: var(--app-h, auto); z-index: 50; pointer-events: none; }
 .sheet-wrap.open { pointer-events: auto; }
 .sheet-back { position: absolute; inset: 0; background: rgba(36, 30, 18, .5); opacity: 0; transition: opacity .2s; }
 .sheet-wrap.open .sheet-back { opacity: 1; }
