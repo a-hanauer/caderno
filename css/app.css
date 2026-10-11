@@ -204,6 +204,7 @@ body[data-cover='pai'] { --cv: var(--cv-pai); } body[data-cover='mae'] { --cv: v
 .hero.empty .hero-ico .ico { --acc: #fff; }
 .hero .hero-btn { margin-left: auto; flex: none; border: 2px solid #fff; border-radius: 12px; background: transparent; color: #fff; padding: 7px 12px; font-weight: var(--w-label); font-size: 15px; }
 .cover .sec-title { color: #fff; }
+.cover .note { color: var(--ink); }
 .cover .sec-title .ico { --acc: #fff; }
 
 .ontem { border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; background: var(--red-l); border: 2px dashed var(--red); }

@@ -89,6 +89,18 @@ export function getIndex() {
   return memo.idx;
 }
 
+/** tarefas com data viram itens do calendário (mesmas regras de título dos eventos) */
+export const GENERIC_TASK = { id: 'tarefa', icon: 'tarefas', label: 'Tarefa', color: '#7a3fd0', destaque: true };
+export function taskItem(tk) {
+  const c = categorize(tk.text);
+  const cat = c.id === 'outro' ? GENERIC_TASK : { ...c, destaque: true };
+  return { kind: 'task', id: tk.id, title: tk.text, allDay: !tk.time, start: tk.time ? `${tk.due}T${tk.time}` : tk.due, end: tk.time ? `${tk.due}T${tk.time}` : tk.due, cat, day: tk.due, task: tk };
+}
+export const tasksOn = (d) => state.tasks.filter((x) => !x.done && x.due === d).map(taskItem);
+/** eventos do Google + tarefas com data, juntos e em ordem */
+export function itemsOn(d) {
+  return [...eventsOn(d), ...tasksOn(d)].sort((a, b) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1));
+}
 export const eventsOn = (d) => getIndex().byDay.get(d) || [];
 export const houseOn = (d) => getIndex().house.get(d) || null;
 
@@ -100,7 +112,12 @@ export function upcoming(from = today(), limit = 4, horizon = 90) {
     if (n < 0 || n > horizon) continue;
     for (const ev of list) if (ev.cat.destaque) out.push({ ...ev, n });
   }
-  out.sort((a, b) => a.n - b.n || a.title.localeCompare(b.title));
+  for (const tk of state.tasks) {
+    if (tk.done || !tk.due) continue;
+    const n = diffDays(from, tk.due);
+    if (n >= 1 && n <= horizon) out.push({ ...taskItem(tk), n }); // as de hoje já estão em "Seu dia"
+  }
+  out.sort((a, b) => a.n - b.n || (a.allDay === b.allDay ? 0 : a.allDay ? -1 : 1) || a.start.localeCompare(b.start) || a.title.localeCompare(b.title));
   return out.slice(0, limit);
 }
 

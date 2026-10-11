@@ -239,8 +239,9 @@ export function moveRoutineItem(id, dir) {
 }
 
 // ---------- tarefas únicas ----------
-export function addTask(text, due) {
-  commit((s) => s.tasks.push({ id: 't-' + uid(), text: text.trim().slice(0, 120), due: isYmd(due) ? due : null, done: false, doneAt: null, created: Date.now() }));
+export const isTime = (v) => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+export function addTask(text, due, time) {
+  commit((s) => s.tasks.push({ id: 't-' + uid(), text: text.trim().slice(0, 120), due: isYmd(due) ? due : null, time: isYmd(due) && isTime(time) ? time : null, done: false, doneAt: null, created: Date.now() }));
 }
 export function updateTask(id, patch) {
   commit((s) => {
