@@ -6,9 +6,9 @@ const KEY_CONN = 'caderno:v1:conn';
 const KEY_CACHE = 'caderno:v1:cache';
 
 export const BLOCOS = [
-  { id: 'manha', nome: 'Manhã', emoji: '☀️', ate: 12 },
-  { id: 'tarde', nome: 'Tarde', emoji: '🌤️', ate: 18 },
-  { id: 'noite', nome: 'Noite', emoji: '🌙', ate: 24 },
+  { id: 'manha', nome: 'Manhã', icon: 'sol', ate: 12 },
+  { id: 'tarde', nome: 'Tarde', icon: 'tarde', ate: 18 },
+  { id: 'noite', nome: 'Noite', icon: 'lua', ate: 24 },
 ];
 export const QUANDO = [
   { id: 'todos', nome: 'Todos os dias' },
@@ -19,15 +19,15 @@ export const QUANDO = [
 function defaultRoutine() {
   const r = (id, emoji, label, block, when) => ({ id, emoji, label, block, when });
   return [
-    r('r-cama', '🛏️', 'Arrumar a cama', 'manha', 'todos'),
-    r('r-dentes-m', '🪥', 'Escovar os dentes', 'manha', 'todos'),
-    r('r-cafe', '🥣', 'Tomar café da manhã', 'manha', 'todos'),
-    r('r-mochila', '🎒', 'Conferir a mochila', 'manha', 'escola'),
-    r('r-tema', '📚', 'Fazer o tema de casa', 'tarde', 'escola'),
-    r('r-material', '✏️', 'Guardar o material', 'tarde', 'escola'),
-    r('r-leitura', '📖', 'Ler um pouco', 'tarde', 'todos'),
-    r('r-banho', '🚿', 'Tomar banho', 'noite', 'todos'),
-    r('r-dentes-n', '🪥', 'Escovar os dentes', 'noite', 'todos'),
+    r('r-cama', 'cama', 'Arrumar a cama', 'manha', 'todos'),
+    r('r-dentes-m', 'escova', 'Escovar os dentes', 'manha', 'todos'),
+    r('r-cafe', 'tigela', 'Tomar café da manhã', 'manha', 'todos'),
+    r('r-mochila', 'mochila', 'Conferir a mochila', 'manha', 'escola'),
+    r('r-tema', 'livros', 'Fazer o tema de casa', 'tarde', 'escola'),
+    r('r-material', 'lapis', 'Guardar o material', 'tarde', 'escola'),
+    r('r-leitura', 'livroaberto', 'Ler um pouco', 'tarde', 'todos'),
+    r('r-banho', 'chuveiro', 'Tomar banho', 'noite', 'todos'),
+    r('r-dentes-n', 'escova', 'Escovar os dentes', 'noite', 'todos'),
   ];
 }
 
@@ -188,7 +188,7 @@ export function toggleRoutine(date, id) {
 }
 
 export function addRoutineItem({ label, emoji, block, when }) {
-  const item = { id: 'r-' + uid(), label: label.trim().slice(0, 40), emoji: emoji || '✅', block, when };
+  const item = { id: 'r-' + uid(), label: label.trim().slice(0, 40), emoji: emoji || 'ok', block, when };
   commit((s) => {
     s.routine.push(item);
     const L = ensureLog();

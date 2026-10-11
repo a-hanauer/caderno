@@ -47,6 +47,9 @@ function render(animate) {
     page.classList.add('enter');
   }
   paintTabs();
+  document.body.classList.toggle('v-ajustes', route === 'ajustes');
+  const col = { hoje: '#23804a', mes: '#3569b8', rotina: '#b45a10', tarefas: '#7048c0' }[route];
+  col && document.getElementById('edge').style.setProperty('--edge', col);
 }
 
 /** redesenho vindo de eventos em segundo plano: não atrapalha quem está digitando */
@@ -84,7 +87,7 @@ async function onHash() {
 // ---------- abas ----------
 function buildTabs() {
   for (const [id, nome] of TABS)
-    tabsEl.append(h('button', { class: 'tab', type: 'button', dataset: { r: id }, 'aria-label': nome, onClick: () => go(id) }, icon(id), h('span', {}, nome)));
+    tabsEl.append(h('button', { class: 'tab', type: 'button', dataset: { r: id }, 'aria-label': nome, onClick: () => go(id) }, icon(id), h('span', { class: 'tlab' }, nome)));
 }
 function paintTabs() {
   const t = today();
