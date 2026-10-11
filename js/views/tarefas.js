@@ -1,7 +1,7 @@
 // Tela "Tarefas": lista de tarefas únicas (fazer e marcar como feito).
 import { state, commit, addTask, updateTask, toggleTask, removeTask } from '../store.js';
 import { today, addDays, diffDays, dow, DIAS_CURTOS, shortDate, isYmd, h } from '../util.js';
-import { icon, checkbox, stamp, openSheet, confirmSheet, choice } from '../ui.js';
+import { icon, checkbox, stamp, openSheet, confirmSheet, choice, celebrate } from '../ui.js';
 
 let showDone = false;
 
@@ -44,6 +44,7 @@ export function render(root, ctx) {
       const old = r.querySelector('.stamp');
       old && old.remove();
       if (on) r.append(stamp('Feito', 'sm pop'));
+      if (on && !state.tasks.some((x) => !x.done)) setTimeout(() => celebrate('Tarefas em dia!', 'Não sobrou nenhuma'), 350);
       // depois de um instante a tarefa vai para "concluídas" (ou volta para a lista)
       setTimeout(() => ctx.rerender(), on ? 900 : 350);
     });

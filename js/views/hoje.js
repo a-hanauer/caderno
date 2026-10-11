@@ -260,7 +260,8 @@ export function render(root, ctx) {
         const s = dayStats(t);
         if (on && s && s.complete && celebratedDay !== t) {
           celebratedDay = t;
-          celebrate();
+          const n = streak(t);
+          celebrate('Tudo feito!', n > 1 ? `${n} dias seguidos!` : 'Rotina completa hoje');
         }
         setTimeout(() => ctx.rerender(), 600);
       });
