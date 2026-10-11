@@ -2,6 +2,35 @@
 <html lang="pt-BR" style="background:#2b5cae">
 <head>
   <meta charset="utf-8">
+  <script>
+  /* Áreas seguras (Dynamic Island, barra de início): no atalho da Tela de Início o WebKit às vezes devolve 0 até a próxima
+     rolagem. Guardamos as maiores margens já medidas e o CSS usa --sat/--sab, com env() só como reserva. */
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+  (function () {
+    var r = document.documentElement, app = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone, K = 'caderno-safe-' + (app ? 'app' : 'web'), s = {};
+    r.classList.add(app ? 'app' : 'web');
+    try { s = JSON.parse(localStorage.getItem(K)) || {}; } catch (e) {}
+    function ap() { if (s.t) r.style.setProperty('--sat', s.t + 'px'); if (s.b) r.style.setProperty('--sab', s.b + 'px'); }
+    ap();
+    function measure() {
+      if (innerWidth > innerHeight) return;
+      var p = document.createElement('div');
+      p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+      r.appendChild(p);
+      var cs = getComputedStyle(p), t = parseFloat(cs.paddingTop) || 0, b = parseFloat(cs.paddingBottom) || 0;
+      p.remove();
+      var ch = false;
+      if (t > (s.t || 0)) { s.t = t; ch = true; }
+      if (b > (s.b || 0)) { s.b = b; ch = true; }
+      if (ch) { try { localStorage.setItem(K, JSON.stringify(s)); } catch (e) {} ap(); }
+    }
+    measure();
+    addEventListener('DOMContentLoaded', measure);
+    addEventListener('load', measure);
+    addEventListener('pageshow', function () { measure(); setTimeout(measure, 300); });
+    addEventListener('resize', function () { setTimeout(measure, 200); });
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Caderno</title>
   <meta name="theme-color" content="#2b5cae">
