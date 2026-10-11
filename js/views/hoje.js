@@ -86,7 +86,7 @@ export function render(root, ctx) {
         top && h('span', { class: 'evb', style: { '--c': top.cat.color }, 'aria-hidden': 'true' }, icon(top.cat.icon)),
         h('i', {}, i === 0 ? 'hoje' : INICIAIS[dt.getDay()]),
         h('b', {}, dt.getDate()),
-        k ? h('span', { class: 'wxs', style: { '--acc': k.acc } }, icon(k.icon), h('em', {}, deg(w.max))) : h('span', { class: 'wxs empty' }),
+        k ? h('span', { class: 'wxs', style: { '--acc': k.acc } }, icon(k.icon), h('em', {}, deg(w.max))) : h('span', { class: 'wxs nowx' }),
         h('span', { class: 'bar' })
       );
       week.append(cell);
