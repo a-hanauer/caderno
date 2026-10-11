@@ -49,9 +49,8 @@ function render(animate) {
   paintTabs();
   document.body.classList.toggle('v-ajustes', route === 'ajustes');
   page.dataset.area = route;
+  document.getElementById('app').dataset.area = route;
   if (route !== 'hoje') delete document.body.dataset.cover;
-  const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.content = route === 'hoje' ? getComputedStyle(document.body).getPropertyValue('--cv').trim() || '#475268' : route === 'ajustes' ? '#f2f2f7' : '#fcf8ec';
 }
 
 /** redesenho vindo de eventos em segundo plano: não atrapalha quem está digitando */
