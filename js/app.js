@@ -52,6 +52,10 @@ function render(animate) {
   document.getElementById('app').dataset.area = route;
   if (route !== 'hoje') delete document.body.dataset.cover;
   paintChrome();
+  if (route !== 'ajustes') {
+    const q = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return Math.round(r.top) + '-' + Math.round(r.bottom); };
+    window.__lay = { app: q('app'), tabs: q('tabs') };
+  }
 }
 
 /** cor do topo: tinge a barra de status / fundo do sistema (theme-color e fundo da página) com a cor do cabeçalho */
