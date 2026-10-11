@@ -62,8 +62,11 @@ function render(animate) {
 /** cor do topo: tinge a barra de status / fundo do sistema (theme-color e fundo da página) com a cor do cabeçalho */
 const TOP_COLORS = { hoje: '#1c8a4b', mes: '#0b8794', rotina: '#d9780a', tarefas: '#7a3fd0', ajustes: '#0a6e3a' };
 const COVER_COLORS = { pai: '#2d5fb4', mae: '#b53a77', troca: '#6a42b8', none: '#475268' };
+const BOTTOM_COLORS = { mes: '#fcf8ec', rotina: '#fcf8ec', tarefas: '#fcf8ec', ajustes: '#f2f2f7' };
 function paintChrome() {
-  const c = route === 'hoje' ? COVER_COLORS[document.body.dataset.cover] || COVER_COLORS.none : TOP_COLORS[route];
+  const cover = COVER_COLORS[document.body.dataset.cover] || COVER_COLORS.none;
+  const fullbug = document.documentElement.classList.contains('fullbug');
+  const c = route === 'hoje' ? cover : fullbug ? BOTTOM_COLORS[route] : TOP_COLORS[route];
   document.documentElement.style.backgroundColor = c;
   document.body.style.backgroundColor = c;
   try { localStorage.setItem('caderno-top', c); } catch {}
@@ -174,6 +177,8 @@ subscribe(() => {
 });
 
 window.addEventListener('hashchange', onHash);
+// o modo de tela (html.fullbug) pode mudar logo depois de abrir: refaz as cores do sistema
+window.addEventListener('resize', () => setTimeout(paintChrome, 350));
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     tick();
