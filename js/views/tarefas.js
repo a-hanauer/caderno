@@ -9,13 +9,14 @@ export function leave() {
   showDone = false;
 }
 
-function dueChip(due, t) {
+function dueChip(due, t, time) {
   if (!due) return null;
   const n = diffDays(t, due);
+  const hh = time ? ' ' + time : '';
   if (n < 0) return h('span', { class: 'due late' }, n === -1 ? 'ontem' : `atrasada ${-n}d`);
-  if (n === 0) return h('span', { class: 'due today' }, 'hoje');
-  if (n === 1) return h('span', { class: 'due' }, 'amanhã');
-  return h('span', { class: 'due' }, `${DIAS_CURTOS[dow(due)]} ${shortDate(due)}`);
+  if (n === 0) return h('span', { class: 'due today' }, 'hoje' + hh);
+  if (n === 1) return h('span', { class: 'due' }, 'amanhã' + hh);
+  return h('span', { class: 'due' }, `${DIAS_CURTOS[dow(due)]} ${shortDate(due)}${hh}`);
 }
 
 export function render(root, ctx) {
@@ -33,7 +34,7 @@ export function render(root, ctx) {
   const row = (tk) => {
     const cb = checkbox(tk.done);
     const r = h('div', { class: 'task' + (tk.done ? ' done' : '') });
-    const chip = !tk.done ? dueChip(tk.due, t) : null;
+    const chip = !tk.done ? dueChip(tk.due, t, tk.time) : null;
     const btn = h('button', { class: 'cbtn', type: 'button', role: 'checkbox', 'aria-checked': String(tk.done), 'aria-label': tk.text }, cb);
     btn.addEventListener('click', () => {
       const on = toggleTask(tk.id);
@@ -75,7 +76,7 @@ export function render(root, ctx) {
 
 function taskSheet(tk) {
   const t = today();
-  const draft = { text: tk ? tk.text : '', due: tk ? tk.due : null };
+  const draft = { text: tk ? tk.text : '', due: tk ? tk.due : null, time: tk ? tk.time || '' : '' };
   const input = h('input', { class: 'field', type: 'text', maxLength: 120, placeholder: 'Ex.: Entregar o trabalho de ciências', value: draft.text, 'aria-label': 'O que fazer' });
   const date = h('input', { class: 'field', type: 'date', value: draft.due || '', 'aria-label': 'Data' });
   const quickOpts = [
@@ -88,6 +89,8 @@ function taskSheet(tk) {
     draft.due = v === 'hoje' ? t : v === 'amanha' ? addDays(t, 1) : v === 'semana' ? addDays(t, 7) : null;
     date.value = draft.due || '';
   });
+  const time = h('input', { class: 'field', type: 'time', value: draft.time, 'aria-label': 'Hora (opcional)' });
+  time.addEventListener('change', () => (draft.time = time.value || ''));
   date.addEventListener('change', () => {
     draft.due = isYmd(date.value) ? date.value : null;
     [...quick.children].forEach((b) => b.setAttribute('aria-checked', 'false'));
@@ -95,7 +98,8 @@ function taskSheet(tk) {
   const save = h('button', { class: 'btn primary', type: 'button', onClick: () => {
     const text = input.value.trim();
     if (!text) { input.focus(); return; }
-    tk ? updateTask(tk.id, { text, due: draft.due }) : addTask(text, draft.due);
+    const tm = draft.due && /^\d\d:\d\d$/.test(draft.time) ? draft.time : null;
+    tk ? updateTask(tk.id, { text, due: draft.due, time: tm }) : addTask(text, draft.due, tm);
     sh.close();
   } }, tk ? 'Salvar' : 'Adicionar');
   const del = tk && h('button', { class: 'btn ghost', type: 'button', onClick: async () => {
@@ -104,7 +108,7 @@ function taskSheet(tk) {
   } }, icon('trash'), 'Apagar');
   const sh = openSheet({
     title: tk ? 'Editar tarefa' : 'Nova tarefa',
-    content: h('div', { class: 'stack' }, h('div', {}, h('span', { class: 'label' }, 'O que precisa ser feito?'), input), h('div', {}, h('span', { class: 'label' }, 'Pra quando?'), quick, h('div', { style: { marginTop: '10px' } }, date))),
+    content: h('div', { class: 'stack' }, h('div', {}, h('span', { class: 'label' }, 'O que precisa ser feito?'), input), h('div', {}, h('span', { class: 'label' }, 'Pra quando?'), quick, h('div', { style: { marginTop: '10px' } }, date), h('div', { style: { marginTop: '10px' } }, h('span', { class: 'label' }, 'Hora (opcional)'), time), h('p', { class: 'hint' }, 'Tarefas com data aparecem no calendário e na tela Hoje. Palavras como "prova", "trabalho" ou "aniversário" no texto mudam o ícone.'))),
     footer: h('div', { class: 'row-btns' }, del, save),
   });
   if (!tk) setTimeout(() => input.focus(), 320);

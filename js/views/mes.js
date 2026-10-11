@@ -1,7 +1,7 @@
 // Tela "Calendário": mês estilo calendário de parede, com a casa de cada dia e os compromissos.
 import { state, dayStats } from '../store.js';
 import { today, parse, ymd, addDays, MESES, INICIAIS, cap, weekdayName, h } from '../util.js';
-import { eventsOn, houseOn, HOUSE } from '../events.js';
+import { itemsOn, houseOn, HOUSE } from '../events.js';
 import { icon, openSheet } from '../ui.js';
 
 let view = null; // { y, m }
@@ -54,7 +54,7 @@ export function render(root, ctx) {
     const dt = parse(d);
     const inMonth = dt.getMonth() === view.m;
     const hs = houseOn(d);
-    const evs = eventsOn(d);
+    const evs = itemsOn(d);
     const cats = [];
     for (const e of evs) if (!cats.some((c) => c.icon === e.cat.icon)) cats.push(e.cat);
     const label = `${cap(weekdayName(d))}, ${dt.getDate()} de ${MESES[dt.getMonth()]}${hs ? '. ' + HOUSE[hs].nome : ''}${evs.length ? `. ${evs.length} compromisso${evs.length > 1 ? 's' : ''}` : ''}`;
@@ -88,14 +88,14 @@ function openDay(d, ctx) {
   const t = today();
   const dt = parse(d);
   const hs = houseOn(d);
-  const evs = eventsOn(d);
-  const tasks = state.tasks.filter((x) => !x.done && x.due === d);
+  const evs = itemsOn(d);
   const rs = d <= t ? dayStats(d) : null;
   const body = h('div', {});
   if (hs) body.append(h('p', { style: { marginBottom: '12px' } }, h('span', { class: 'house-chip ' + hs }, icon(hs === 'troca' ? 'troca' : 'casa'), HOUSE[hs].nome)));
-  for (const e of evs)
-    body.append(h('div', { class: 'ev-row', style: { '--c': e.cat.color } }, icon(e.cat.icon), h('div', { class: 'tt' }, e.title, h('small', {}, e.allDay ? `${e.cat.label} · dia todo` : `${e.cat.label} · ${e.start.slice(11, 16)}${e.end && e.end.slice(11, 16) && e.end.slice(0, 10) === e.start.slice(0, 10) ? ' às ' + e.end.slice(11, 16) : ''}`))));
-  for (const tk of tasks) body.append(h('div', { class: 'ev-row', style: { '--c': '#7048c0' } }, icon('tarefas'), h('div', { class: 'tt' }, tk.text, h('small', {}, 'Tarefa pra esse dia'))));
+  for (const e of evs) {
+    const sub = e.kind === 'task' ? `${e.cat.id === 'tarefa' ? 'Tarefa' : e.cat.label + ' (tarefa)'} · ${e.allDay ? 'dia todo' : e.start.slice(11, 16)}` : e.allDay ? `${e.cat.label} · dia todo` : `${e.cat.label} · ${e.start.slice(11, 16)}${e.end && e.end.slice(11, 16) && e.end.slice(0, 10) === e.start.slice(0, 10) ? ' às ' + e.end.slice(11, 16) : ''}`;
+    body.append(h('div', { class: 'ev-row', style: { '--c': e.cat.color } }, icon(e.cat.icon), h('div', { class: 'tt' }, e.title, h('small', {}, sub))));
+  }
   if (rs)
     body.append(h('div', { class: 'ev-row', style: { '--c': rs.complete ? 'var(--green)' : '#e8913a' } }, icon(rs.complete ? 'ok' : 'rotina'), h('div', { class: 'tt' }, `Rotina: ${rs.done} de ${rs.total}`, rs.missed.length ? h('small', {}, 'Faltou: ' + rs.missed.map((m) => m.label).join(', ')) : h('small', {}, 'Tudo feito!'))));
   if (!body.children.length) body.append(h('p', { class: 'muted' }, 'Nada marcado nesse dia.'));

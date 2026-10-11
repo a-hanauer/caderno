@@ -99,6 +99,7 @@ function sanitizePayload(o) {
       id: str(t.id || 't-' + uid(), 40),
       text: str(t.text, 120),
       due: isYmd(t.due) ? t.due : null,
+      time: isYmd(t.due) && typeof t.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t.time) ? t.time : null,
       done: !!t.done,
       doneAt: typeof t.doneAt === 'number' ? t.doneAt : null,
       created: typeof t.created === 'number' ? t.created : Date.now(),

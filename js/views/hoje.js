@@ -1,7 +1,7 @@
 // Tela "Hoje": onde o Sebastião dorme, a linha do dia (agenda + rotina + tarefas) e o que vem aí.
 import { state, commit, ensureLog, dayStats, streak, toggleRoutine, toggleTask, BLOCOS } from '../store.js';
 import { today, addDays, parse, cap, longDate, weekdayName, countdown, shortDate, INICIAIS, diffDays, h } from '../util.js';
-import { eventsOn, houseOn, upcoming, HOUSE, syncStatus } from '../events.js';
+import { eventsOn, houseOn, upcoming, HOUSE, syncStatus, tasksOn } from '../events.js';
 import { icon, checkbox, celebrate } from '../ui.js';
 
 /** transforma um cartão em botão acessível (div, para poder conter títulos e listas) */
@@ -18,7 +18,7 @@ export const currentBlock = (now = new Date()) => BLOCOS.find((b) => now.getHour
 const BLOCK_COLOR = { manha: '#d99a0b', tarde: '#e0742a', noite: '#5b63c4' };
 const BLOCK_BG = { manha: '#fff3c9', tarde: '#ffe3cc', noite: '#e2e4fa' };
 const BLOCK_AT = { manha: 420, tarde: 720, noite: 1080 }; // posição de cada bloco na linha do dia (minutos)
-const NOTE_BY_CAT = { prova: 'p', trabalho: 'y', niver: 'b', data: 'v' };
+const NOTE_BY_CAT = { prova: 'p', trabalho: 'y', niver: 'b', data: 'v', tarefa: 'v' };
 
 let openState = { day: '', map: {} }; // blocos que o usuário abriu/fechou hoje
 let celebratedDay = '';
@@ -118,8 +118,24 @@ export function render(root, ctx) {
     });
   }
 
-  // tarefas únicas para hoje (ou atrasadas)
-  const dueNow = state.tasks.filter((x) => !x.done && x.due && x.due <= t).sort((a, b) => a.due.localeCompare(b.due));
+  // tarefas com hora marcada hoje entram na linha do dia, como compromissos
+  for (const it of tasksOn(t).filter((x) => x.task.time)) {
+    const tk = it.task;
+    const min = parseInt(tk.time.slice(0, 2), 10) * 60 + parseInt(tk.time.slice(3, 5), 10);
+    const cb = checkbox(false);
+    const row = h('button', { class: 'mini', type: 'button', role: 'checkbox', 'aria-checked': 'false', style: { borderTop: '0' } }, cb, h('span', { class: 'lbl' }, h('span', { class: 'strike' }, tk.text)), h('span', { class: 'tl-time' }, tk.time));
+    row.addEventListener('click', () => {
+      const on = toggleTask(tk.id);
+      row.classList.toggle('done', on);
+      row.setAttribute('aria-checked', String(on));
+      cb.classList.toggle('on', on);
+      setTimeout(() => ctx.rerender(), 500);
+    });
+    entries.push({ at: min, el: h('div', { class: 'tl-i', style: min < nowMin ? { opacity: '.7' } : null }, h('span', { class: 'node', style: { '--c': it.cat.color, '--nb': '#fff' } }, icon(it.cat.icon)), h('div', { class: 'tl-body' }, row, h('p', { class: 'tl-sub' }, it.cat.label))) });
+  }
+
+  // tarefas únicas para hoje (ou atrasadas), sem hora
+  const dueNow = state.tasks.filter((x) => !x.done && x.due && (x.due < t || (x.due === t && !x.time))).sort((a, b) => a.due.localeCompare(b.due));
   if (dueNow.length) {
     const list = h('div', { class: 'tl-list' });
     for (const tk of dueNow.slice(0, 4)) {
@@ -197,13 +213,13 @@ export function render(root, ctx) {
   else dayCard.append(h('div', { class: 'day-empty' }, icon('ok'), h('span', {}, conn ? 'Nada marcado e sem rotina hoje.' : 'Conecte a agenda para ver os compromissos.')));
 
   // ----- vem aí -----
-  const next = upcoming(t, 4);
+  const next = upcoming(t, 6);
   let nextBox = null;
   if (next.length) {
     const grid = h('div', { class: 'next-grid' + (next.length === 1 ? ' one' : '') });
     for (const e of next)
       grid.append(
-        tap(h('div', { class: 'note tappable next-note ' + (NOTE_BY_CAT[e.cat.id] || 'o'), style: { '--c': e.cat.color } }, icon(e.cat.icon), h('b', {}, e.title), h('span', { class: 'when' }, e.n <= 14 ? countdown(e.n) : shortDate(e.day))), () => go('mes'))
+        tap(h('div', { class: 'note tappable next-note ' + (NOTE_BY_CAT[e.cat.id] || 'o'), style: { '--c': e.cat.color } }, icon(e.cat.icon), h('b', {}, e.title), h('span', { class: 'when' }, (e.n <= 14 ? countdown(e.n) : shortDate(e.day)) + (!e.allDay ? ' · ' + e.start.slice(11, 16) : ''))), () => go(e.kind === 'task' ? 'tarefas' : 'mes'))
       );
     nextBox = h('section', {}, h('h2', { class: 'sec-title' }, icon('mes'), 'Vem aí'), grid);
   }
