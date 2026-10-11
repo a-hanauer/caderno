@@ -213,9 +213,11 @@ body[data-cover='pai'] { --cv: var(--cv-pai); } body[data-cover='mae'] { --cv: v
 .hd.today.pai .dt { background: var(--pai); } .hd.today.mae .dt { background: var(--mae); } .hd.today.troca .dt { background: var(--troca); }
 .hero-note { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: var(--w-label); background: rgba(0, 0, 0, .2); border-radius: 99px; padding: 7px 14px 7px 10px; width: fit-content; max-width: 100%; }
 .hero-note .ico { width: 20px; height: 20px; --acc: #fff; }
-.hero.empty .hero-ico { background: rgba(255, 255, 255, .2); color: #fff; box-shadow: none; border: 2px dashed rgba(255, 255, 255, .7); }
-.hero.empty .hero-ico .ico { --acc: #fff; }
-.hero .hero-btn { margin-left: auto; flex: none; border: 2px solid #fff; border-radius: 12px; background: transparent; color: #fff; padding: 7px 12px; font-weight: var(--w-label); font-size: 15px; }
+.hero.nohouse .hero-ico { background: rgba(255, 255, 255, .2); color: #fff; box-shadow: none; border: 2px dashed rgba(255, 255, 255, .7); }
+.hero.nohouse .hero-ico .ico { --acc: #fff; }
+.hero .hero-btn { display: block; width: 100%; margin-top: 16px; min-height: 48px; border: 0; border-radius: 12px; background: #fff; color: var(--cv); padding: 0 16px; font-weight: var(--w-head); font-size: 17px; box-shadow: 0 3px 0 rgba(0, 0, 0, .25); }
+.hero .hero-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+.hero.nohouse .hero-txt strong { font-size: 27px; }
 .cover .sec-title { color: #fff; }
 .cover .note { color: var(--ink); }
 .cover .sec-title .ico { --acc: #fff; }

@@ -75,9 +75,9 @@ export function render(root, ctx) {
       hsTomorrow && hsTomorrow !== hs && h('p', { class: 'hero-note' }, icon('troca'), hsTomorrow === 'troca' ? 'Amanhã tem troca de casa' : `Amanhã: ${HOUSE[hsTomorrow].nome}`)
     );
   } else if (!conn) {
-    hero = h('section', { class: 'hero empty' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Agenda não conectada'), h('strong', {}, 'Onde eu durmo?')), h('button', { class: 'hero-btn', type: 'button', onClick: () => go('ajustes') }, 'Conectar')));
+    hero = h('section', { class: 'hero nohouse' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Agenda não conectada'), h('strong', {}, 'Onde eu durmo?'))), h('button', { class: 'hero-btn', type: 'button', onClick: () => go('ajustes') }, 'Conectar a agenda'));
   } else {
-    hero = h('section', { class: 'hero empty' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Nenhuma casa marcada'), h('strong', {}, 'pra hoje'))));
+    hero = h('section', { class: 'hero nohouse' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Nenhuma casa marcada'), h('strong', {}, 'pra hoje'))));
   }
 
   // ----- ontem -----
