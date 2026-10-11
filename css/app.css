@@ -44,8 +44,8 @@
   --ml: 30px;       /* posição da margem vermelha */
   --pl: 44px;       /* início do texto nas páginas pautadas */
   --ic: 18px;       /* ícones do calendário */
-  --safe-t: env(safe-area-inset-top, 0px);
-  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: var(--sat, env(safe-area-inset-top, 0px));
+  --safe-b: var(--sab, env(safe-area-inset-bottom, 0px));
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -78,6 +78,8 @@ body.sheet-open #page { overflow: hidden; }
 }
 #page::-webkit-scrollbar { display: none; }
 /* faixa sob a barra de status / Dynamic Island: mesma cor do topo da página */
+#app[data-area] { background: linear-gradient(var(--area) 0, var(--area) calc(var(--safe-t) + 96px), var(--paper) calc(var(--safe-t) + 96px)); }
+body.v-ajustes #app { background: linear-gradient(#0a6e3a 0, #0a6e3a calc(var(--safe-t) + 60px), #f2f2f7 calc(var(--safe-t) + 60px)); }
 #top { position: absolute; top: 0; left: 0; right: 0; height: var(--safe-t); background: var(--top-bg, var(--area, var(--paper))); z-index: 6; }
 body[data-cover] #top { background-color: var(--cv); }
 body.v-ajustes #top { background: #0a6e3a; }
@@ -465,7 +467,7 @@ textarea.field { min-height: 92px; resize: vertical; font-size: 15px; line-heigh
    AJUSTES — área dos pais: visual neutro, de formulário, sem o papel
    ========================================================= */
 body.v-ajustes { background: #f2f2f7; font-family: var(--sys); }
-body.v-ajustes #app { background: #f2f2f7; }
+
 body.v-ajustes #tabs { display: none; }
 body.v-ajustes #page { bottom: 0; font-family: var(--sys); }
 .set { padding: 0 0 calc(32px + var(--safe-b)); max-width: 640px; margin: 0 auto; font-size: 16px; line-height: 1.35; color: #1c1c1e; }
