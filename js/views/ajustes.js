@@ -147,7 +147,7 @@ function diag() {
     `abas ${lay.tabs || '-'}`,
     `safe ${cs.getPropertyValue('--safe-t').trim()}/${cs.getPropertyValue('--safe-b').trim()}`,
     `body ${getComputedStyle(document.body).backgroundColor}`,
-    `sabx ${r.style.getPropertyValue('--sab-x') || '-'}`,
+    `modo ${r.classList.contains('fullbug') ? 'fullbug' : '-'}`,
   ];
   return 'diag: ' + f.join(' · ');
 }
