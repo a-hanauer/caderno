@@ -18,54 +18,46 @@ async function hashPin(pin, salt) {
   return 'f' + x.toString(16);
 }
 
-function keypad({ title, text, check }) {
+/** pede 4 números com o teclado numérico do próprio sistema (área dos pais: visual neutro) */
+function keypad({ title, text, check, cta = 'Continuar' }) {
   return new Promise((resolve) => {
-    let val = '';
-    let busy = false;
     let finished = false;
-    const dots = h('div', { class: 'pin-dots', 'aria-live': 'polite' }, [0, 1, 2, 3].map(() => h('i')));
-    const paint = () => [...dots.children].forEach((d, i) => d.classList.toggle('f', i < val.length));
+    const input = h('input', { class: 'pin-in', type: 'password', inputmode: 'numeric', pattern: '[0-9]*', maxLength: 4, autocomplete: 'off', autocorrect: 'off', 'aria-label': text || title, enterkeyhint: 'done' });
+    const msg = h('p', { class: 'pin-msg', 'aria-live': 'polite' }, text || '');
     const finish = (v) => {
       if (finished) return;
       finished = true;
-      document.removeEventListener('keydown', onKey);
       sh.close();
       resolve(v);
     };
-    const press = async (k) => {
-      if (busy) return;
-      if (k === 'del') {
-        val = val.slice(0, -1);
-        paint();
+    const submit = async () => {
+      const v = input.value.replace(/\D/g, '');
+      if (v.length !== 4) {
+        msg.textContent = 'O PIN tem 4 números.';
+        msg.classList.add('err');
+        input.focus();
         return;
       }
-      if (val.length >= 4) return;
-      val += k;
-      paint();
-      if (val.length === 4) {
-        busy = true;
-        const ok = await check(val);
-        busy = false;
-        if (ok) finish(true);
-        else {
-          dots.classList.add('shake');
-          setTimeout(() => {
-            dots.classList.remove('shake');
-            val = '';
-            paint();
-          }, 420);
-        }
+      if (await check(v)) finish(true);
+      else {
+        msg.textContent = 'PIN errado. Tente de novo.';
+        msg.classList.add('err');
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 420);
+        input.value = '';
+        input.focus();
       }
     };
-    const onKey = (e) => {
-      if (/^[0-9]$/.test(e.key)) press(e.key);
-      else if (e.key === 'Backspace') press('del');
-    };
-    document.addEventListener('keydown', onKey);
-    const keys = h('div', { class: 'keypad' });
-    for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'])
-      keys.append(k === '' ? h('span', { class: 'key blank' }) : h('button', { class: 'key', type: 'button', 'aria-label': k === 'del' ? 'Apagar' : k, onClick: () => press(k) }, k === 'del' ? icon('backspace') : k));
-    const sh = openSheet({ title, onClose: () => finish(false), content: h('div', { class: 'stack' }, text && h('p', { class: 'muted', style: { textAlign: 'center' } }, text), dots, keys) });
+    input.addEventListener('input', () => {
+      input.value = input.value.replace(/\D/g, '').slice(0, 4);
+      msg.classList.remove('err');
+      msg.textContent = text || '';
+      if (input.value.length === 4) submit();
+    });
+    input.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), submit()));
+    const ok = h('button', { class: 'sbtn primary', type: 'button', onClick: submit }, cta);
+    const sh = openSheet({ title, cls: 'sys', onClose: () => finish(false), content: h('div', { class: 'pin-box' }, msg, input), footer: h('div', { class: 'set-btns', style: { padding: '0', background: 'none', border: '0' } }, ok) });
+    setTimeout(() => input.focus(), 60);
   });
 }
 
@@ -75,6 +67,7 @@ export async function gate() {
   return keypad({
     title: 'Área dos pais',
     text: 'Digite o PIN',
+    cta: 'Entrar',
     check: async (p) => (await hashPin(p, state.settings.pinSalt)) === state.settings.pinHash,
   });
 }

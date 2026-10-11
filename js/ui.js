@@ -109,7 +109,7 @@ export function toast(msg, ms = 2600) {
 // ---------- folha que sobe de baixo ----------
 const openSheets = [];
 
-export function openSheet({ title, content, footer, onClose, tall = false }) {
+export function openSheet({ title, content, footer, onClose, tall = false, cls = '' }) {
   const root = document.getElementById('sheet-root');
   const back = h('div', { class: 'sheet-back' });
   let closed = false;
@@ -122,7 +122,7 @@ export function openSheet({ title, content, footer, onClose, tall = false }) {
     h('div', { class: 'sheet-body' }, content),
     footer ? h('footer', { class: 'sheet-foot' }, footer) : null
   );
-  const wrap = h('div', { class: 'sheet-wrap' }, back, box);
+  const wrap = h('div', { class: 'sheet-wrap' + (cls ? ' ' + cls : '') }, back, box);
   root.append(wrap);
   document.body.classList.add('sheet-open');
 

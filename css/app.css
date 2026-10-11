@@ -522,17 +522,6 @@ textarea.field { min-height: 92px; resize: vertical; font-size: 15px; line-heigh
 .house-chip .ico { width: 22px; height: 22px; --acc: #fff; }
 .house-chip.pai { background: var(--pai); } .house-chip.mae { background: var(--mae); } .house-chip.troca { background: var(--troca); }
 
-/* PIN */
-.pin-dots { display: flex; justify-content: center; gap: 16px; margin: 4px 0 12px; }
-.pin-dots i { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--ink); display: block; }
-.pin-dots i.f { background: var(--ink); }
-.pin-dots.shake { animation: shake .4s; }
-@keyframes shake { 20%, 60% { transform: translateX(-9px); } 40%, 80% { transform: translateX(9px); } }
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 290px; margin: 0 auto; }
-.key { height: 58px; border: 2px solid var(--ink); border-radius: 14px; background: var(--paper-3); font-size: 26px; font-weight: var(--w-head); box-shadow: 0 3px 0 var(--ink); display: grid; place-items: center; padding: 0; line-height: 1; }
-.key .ico { width: 28px; height: 28px; }
-.key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
-.key.blank { visibility: hidden; }
 
 /* ---------- avisos ---------- */
 #toast-root { position: fixed; left: 0; right: 0; top: calc(var(--safe-t) + 10px); z-index: 80; display: flex; justify-content: center; pointer-events: none; }
@@ -584,18 +573,24 @@ textarea.set-in { min-height: 84px; font-size: 13px; line-height: 1.3; word-brea
 .set-check { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; border-top: 1px solid #ececf0; background: #fff; font-size: 15px; }
 .set-check input { width: 22px; height: 22px; margin-top: 1px; accent-color: #0a6e3a; flex: none; }
 .set-foot { text-align: center; color: #8e8e93; font-size: 12px; margin: 26px 16px 0; }
-body.v-ajustes .sheet { background: #f2f2f7; font-family: var(--sys); }
-body.v-ajustes .sheet-head, body.v-ajustes .sheet-foot { border-color: #d8d8de; background: #f2f2f7; }
-body.v-ajustes .sheet-head h2 { font-family: var(--sys); font-weight: 600; font-size: 19px; }
+body.v-ajustes .sheet, .sheet-wrap.sys .sheet { background: #f2f2f7; font-family: var(--sys); }
+body.v-ajustes .sheet-head, body.v-ajustes .sheet-foot, .sheet-wrap.sys .sheet-head, .sheet-wrap.sys .sheet-foot { border-color: #d8d8de; background: #f2f2f7; border-style: solid; border-width: 0; }
+.sheet-wrap.sys .sheet-head { border-bottom-width: 1px; } .sheet-wrap.sys .sheet-foot { border-top-width: 1px; }
+body.v-ajustes .sheet-head h2, .sheet-wrap.sys .sheet-head h2 { font-family: var(--sys); font-weight: 600; font-size: 19px; }
+.sheet-wrap.sys .icon-btn { box-shadow: none; border-color: #c8c8d0; background: #e9e9ee; color: #1c1c1e; }
+.sheet-wrap.sys .sheet-grip { background: #c8c8d0; }
+.pin-box { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 4px 0 6px; }
+.pin-msg { text-align: center; font-size: 15px; color: #6c6c70; }
+.pin-msg.err { color: #d12f27; }
+.pin-in { font-family: var(--sys); font-size: 28px; letter-spacing: .6em; text-align: center; padding: 10px 0 10px .6em; min-height: 56px; border: 1px solid #c8c8d0; border-radius: 12px; background: #fff; color: #1c1c1e; outline: none; -webkit-user-select: text; user-select: text; }
+.pin-in:focus { border-color: #0a6e3a; box-shadow: 0 0 0 3px rgba(10, 110, 58, .2); }
+.pin-in.shake { animation: shake .4s; }
 body.v-ajustes .sheet-grip { background: #c8c8d0; }
 body.v-ajustes .btn { font-family: var(--sys); border: 0; box-shadow: none; background: #e4e4ea; border-radius: 10px; }
 body.v-ajustes .btn.primary { background: #0a6e3a; color: #fff; }
 body.v-ajustes .btn.danger { background: #d12f27; color: #fff; }
 body.v-ajustes .btn.ghost { background: #e4e4ea; }
 body.v-ajustes .icon-btn { box-shadow: none; border-color: #c8c8d0; background: #e9e9ee; }
-body.v-ajustes .key { font-family: var(--sys); border: 0; box-shadow: none; background: #fff; }
-body.v-ajustes .pin-dots i { border-color: #1c1c1e; }
-body.v-ajustes .pin-dots i.f { background: #1c1c1e; }
 
 /* ---------- telas pequenas ---------- */
 @media (max-height: 700px) {
@@ -607,3 +602,4 @@ body.v-ajustes .pin-dots i.f { background: #1c1c1e; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+@keyframes shake { 20%, 60% { transform: translateX(-9px); } 40%, 80% { transform: translateX(9px); } }
