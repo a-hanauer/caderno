@@ -60,7 +60,7 @@ export function render(root, ctx) {
   const blocks = h('div', { class: 'blocks' });
   const counters = new Map();
 
-  const refresh = (celebrate) => {
+  const refresh = (party) => {
     const L = ensureLog(t);
     const done = new Set(L.done);
     for (const b of BLOCOS) {
@@ -77,9 +77,10 @@ export function render(root, ctx) {
       todayMk.className = 'mk ' + (s.complete ? 'full' : 'part');
       todayMk.replaceChildren(...(s.complete ? [icon('check')] : [`${s.done}/${s.total}`]));
     }
-    if (celebrate && s && s.complete && celebrated !== t) {
+    if (party && s && s.complete && celebrated !== t) {
       celebrated = t;
-      celebrate();
+      const n = streak(t);
+      celebrate('Tudo feito!', n > 1 ? `${n} dias seguidos!` : 'Rotina completa hoje');
     }
   };
 
