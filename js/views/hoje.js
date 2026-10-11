@@ -1,6 +1,6 @@
 // Tela "Hoje": onde o Sebastião dorme, a linha do dia (agenda + rotina + tarefas) e o que vem aí.
 import { state, commit, ensureLog, dayStats, streak, toggleRoutine, toggleTask, BLOCOS } from '../store.js';
-import { today, addDays, parse, cap, longDate, weekdayName, countdown, shortDate, INICIAIS, diffDays, h } from '../util.js';
+import { today, addDays, parse, cap, longDate, weekdayName, countdown, shortDate, INICIAIS, DIAS_CURTOS, diffDays, h } from '../util.js';
 import { eventsOn, houseOn, upcoming, HOUSE, syncStatus, tasksOn } from '../events.js';
 import { icon, checkbox, celebrate } from '../ui.js';
 
@@ -43,41 +43,91 @@ export function render(root, ctx) {
   const nowMin = hour * 60 + now.getMinutes();
   if (openState.day !== t) openState = { day: t, map: {} };
 
-  // ----- capa -----
+  // ----- capa: data + semana (casa de cada dia) -----
   const hs = houseOn(t);
-  const hsTomorrow = houseOn(addDays(t, 1));
   document.body.dataset.cover = hs || 'none';
-  const nome = (state.profile && state.profile.name) || 'Caderno';
   const head = h(
     'header',
     { class: 'cover-top' },
-    h('div', { class: 'label-card' }, h('small', {}, 'Caderno do'), h('strong', {}, nome)),
+    h('div', { class: 'cover-date' }, h('b', {}, cap(weekdayName(t))), h('span', {}, longDate(t).replace(/ de \d{4}$/, ''))),
     h('button', { class: 'icon-btn sm gear', type: 'button', 'aria-label': 'Ajustes (área dos pais)', onClick: () => go('ajustes') }, icon('gear'))
   );
 
-  const dateLine = h('p', { class: 'cover-date' }, `${cap(weekdayName(t))}, ${longDate(t).replace(/ de \d{4}$/, '')} · ${greeting(hour).toLowerCase()}!`);
-
-  // ----- a casa em destaque -----
-  let hero;
-  if (hs) {
-    const days = h('div', { class: 'hero-days', 'aria-label': 'Casa nos próximos 7 dias' });
+  let week;
+  const anyHouse = Array.from({ length: 7 }, (_, i) => houseOn(addDays(t, i))).some(Boolean);
+  if (anyHouse) {
+    week = h('div', { class: 'week', role: 'list', 'aria-label': 'Casa nos próximos 7 dias' });
+    let prev = houseOn(addDays(t, -1));
     for (let i = 0; i < 7; i++) {
       const d = addDays(t, i);
       const hh = houseOn(d);
       const dt = parse(d);
-      days.append(h('div', { class: ['hd', hh || 'none', i === 0 && 'today'].filter(Boolean).join(' '), title: `${cap(weekdayName(d))}${hh ? ': ' + HOUSE[hh].nome : ''}` }, h('i', {}, INICIAIS[dt.getDay()]), h('b', {}, dt.getDate()), h('span', { class: 'dt' })));
+      const changed = i > 0 && hh && prev && hh !== prev;
+      week.append(
+        h(
+          'div',
+          { class: ['wd', hh || 'none', i === 0 && 'today'].filter(Boolean).join(' '), role: 'listitem', 'aria-label': `${cap(weekdayName(d))}${hh ? ': ' + HOUSE[hh].nome : ''}` },
+          changed && h('span', { class: 'swap', 'aria-hidden': 'true' }, icon('troca')),
+          h('i', {}, INICIAIS[dt.getDay()]),
+          h('b', {}, dt.getDate()),
+          i === 0 ? h('small', {}, hh === 'pai' ? 'Papai' : hh === 'mae' ? 'Mamãe' : hh === 'troca' ? 'troca' : '—') : h('span', { class: 'bar' })
+        )
+      );
+      prev = hh || prev;
     }
-    hero = h(
-      'section',
-      { class: 'hero ' + hs, 'aria-label': hs === 'troca' ? 'Hoje tem troca de casa' : 'Hoje você dorme na ' + HOUSE[hs].nome },
-      h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon(hs === 'troca' ? 'troca' : 'casa')), h('div', { class: 'hero-txt' }, h('small', {}, hs === 'troca' ? 'Hoje tem' : 'Hoje você dorme na'), h('strong', {}, hs === 'troca' ? 'Troca de casa' : HOUSE[hs].nome))),
-      days,
-      hsTomorrow && hsTomorrow !== hs && h('p', { class: 'hero-note' }, icon('troca'), hsTomorrow === 'troca' ? 'Amanhã tem troca de casa' : `Amanhã: ${HOUSE[hsTomorrow].nome}`)
-    );
-  } else if (!conn) {
-    hero = h('section', { class: 'hero nohouse' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Agenda não conectada'), h('strong', {}, 'Onde eu durmo?'))), h('button', { class: 'hero-btn', type: 'button', onClick: () => go('ajustes') }, 'Conectar a agenda'));
   } else {
-    hero = h('section', { class: 'hero nohouse' }, h('div', { class: 'hero-main' }, h('span', { class: 'hero-ico' }, icon('casa')), h('div', { class: 'hero-txt' }, h('small', {}, 'Nenhuma casa marcada'), h('strong', {}, 'pra hoje'))));
+    week = h('div', { class: 'week-empty' }, icon('casa'), h('span', { class: 'tx' }, conn ? 'Nenhuma casa marcada esta semana' : 'Agenda não conectada'), !conn && h('button', { type: 'button', onClick: () => go('ajustes') }, 'Conectar'));
+  }
+
+  // ----- agora / próximo: o que importa neste momento -----
+  const doneSet0 = new Set(log.done);
+  const toMin = (hhmm) => parseInt(hhmm.slice(0, 2), 10) * 60 + parseInt(hhmm.slice(3, 5), 10);
+  const inMin = (n) => (n < 60 ? `em ${n} min` : n < 180 ? `em ${Math.floor(n / 60)}h${n % 60 ? String(n % 60).padStart(2, '0') : ''}` : '');
+  const timed = [...eventsOn(t).filter((e) => !e.allDay), ...tasksOn(t).filter((x) => !x.allDay)].map((e) => {
+    const st = toMin(e.start.slice(11, 16));
+    const en = e.kind !== 'task' && e.end && e.end.slice(0, 10) === t ? toMin(e.end.slice(11, 16)) : st + 30;
+    return { e, st, en };
+  }).sort((a, b) => a.st - b.st);
+  const cands = [];
+  for (const x of timed) {
+    if (x.st <= nowMin && nowMin < x.en) cands.push({ p: 1, tag: 'Agora', title: x.e.title, sub: x.e.kind === 'task' ? 'tarefa' : `até ${String(Math.floor(x.en / 60)).padStart(2, '0')}:${String(x.en % 60).padStart(2, '0')}`, cat: x.e.cat, go: x.e.kind === 'task' ? 'tarefas' : 'dia' });
+    else if (x.st > nowMin && x.st - nowMin <= 90) cands.push({ p: 2, tag: inMin(x.st - nowMin), title: x.e.title, sub: `às ${x.e.start.slice(11, 16)}`, cat: x.e.cat, go: x.e.kind === 'task' ? 'tarefas' : 'dia' });
+    else if (x.st > nowMin) cands.push({ p: 5, tag: `Hoje às ${x.e.start.slice(11, 16)}`, title: x.e.title, sub: x.e.cat.label, cat: x.e.cat, go: x.e.kind === 'task' ? 'tarefas' : 'dia' });
+  }
+  const curB = currentBlock(now);
+  for (const b of BLOCOS) {
+    const pend = log.plan.filter((pl) => pl.block === b.id && !doneSet0.has(pl.id));
+    if (!pend.length) continue;
+    const isCur = b.id === curB.id;
+    const behind = b.ate <= hour;
+    if (!isCur && !behind) continue;
+    const names = pend.slice(0, 2).map((x) => x.label).join(' e ') + (pend.length > 2 ? ` e mais ${pend.length - 2}` : '');
+    cands.push({ p: isCur ? 3 : 6, tag: isCur ? `Rotina da ${b.nome.toLowerCase()}` : `Ficou pra trás · ${b.nome.toLowerCase()}`, title: `Falta${pend.length > 1 ? 'm' : ''} ${pend.length}`, sub: names, cat: { icon: b.icon, color: BLOCK_COLOR[b.id] }, go: 'dia', nx: `Rotina da ${b.nome.toLowerCase()} · falta${pend.length > 1 ? 'm' : ''} ${pend.length}`, em: isCur ? '' : 'atrasada' });
+  }
+  const dueT = state.tasks.filter((x) => !x.done && x.due && (x.due < t || (x.due === t && !x.time)));
+  if (dueT.length) {
+    const late = dueT.filter((x) => x.due < t).length;
+    cands.push({ p: 4, tag: late ? `Tarefa atrasada` : 'Tarefa pra hoje', title: dueT[0].text, sub: dueT.length > 1 ? `e mais ${dueT.length - 1}` : '', cat: { icon: 'tarefas', color: late ? '#c93a33' : '#7a3fd0' }, go: 'tarefas' });
+  }
+  const soon = upcoming(t, 3, 7)[0];
+  if (soon) cands.push({ p: 7, tag: soon.n === 0 ? 'Hoje' : soon.n === 1 ? 'Amanhã' : `${cap(DIAS_CURTOS[parse(soon.day).getDay()])} · ${countdown(soon.n)}`, title: soon.title, sub: soon.cat.label + (!soon.allDay ? ' · ' + soon.start.slice(11, 16) : ''), cat: soon.cat, go: soon.kind === 'task' ? 'tarefas' : 'mes' });
+  const hsTomorrow = houseOn(addDays(t, 1));
+  if (hour >= 16 && hsTomorrow && hs && hsTomorrow !== hs) cands.push({ p: 2.5, tag: 'Amanhã', title: hsTomorrow === 'troca' ? 'Dia de troca de casa' : `Casa ${hsTomorrow === 'pai' ? 'do Papai' : 'da Mamãe'}`, sub: '', cat: { icon: 'troca', color: hsTomorrow === 'mae' ? 'var(--mae)' : 'var(--pai)' }, go: 'mes' });
+  cands.sort((a, b) => a.p - b.p);
+
+  let dayCard; // definido mais abaixo (o cartão rola até ele)
+  const openTarget = (c) => (c.go === 'dia' ? dayCard && dayCard.scrollIntoView({ behavior: 'smooth', block: 'start' }) : go(c.go));
+  let nowCard;
+  if (cands.length) {
+    const [c1, c2] = cands;
+    nowCard = h(
+      'section',
+      { class: 'now', 'aria-label': 'Agora' },
+      tap(h('div', { class: 'now-main' }, h('span', { class: 'now-ico', style: { '--c': c1.cat.color } }, icon(c1.cat.icon)), h('div', { class: 'now-txt' }, h('small', {}, c1.tag), h('b', {}, c1.title), c1.sub && h('span', {}, c1.sub)), icon('right', 'chev')), () => openTarget(c1)),
+      c2 && tap(h('div', { class: 'now-next' }, h('small', {}, 'Depois'), h('span', { class: 'now-ico sm', style: { '--c': c2.cat.color } }, icon(c2.cat.icon)), h('span', { class: 'nx' }, c2.nx || c2.title), (c2.em ?? c2.tag) && h('em', {}, c2.em ?? c2.tag)), () => openTarget(c2))
+    );
+  } else {
+    nowCard = h('section', { class: 'now done' }, h('div', { class: 'now-main' }, h('span', { class: 'now-ico', style: { '--c': 'var(--green)' } }, icon('ok')), h('div', { class: 'now-txt' }, h('small', {}, 'Agora'), h('b', {}, 'Tudo em dia!'), h('span', {}, 'Nada pendente por enquanto.'))));
   }
 
   // ----- ontem -----
@@ -205,7 +255,7 @@ export function render(root, ctx) {
   entries.sort((a, b) => a.at - b.at);
 
   const pct = stats ? Math.round((stats.done / stats.total) * 100) : 0;
-  const dayCard = h('section', { class: 'day-card', 'aria-label': 'Seu dia' });
+  dayCard = h('section', { class: 'day-card', 'aria-label': 'Seu dia' });
   dayCard.append(
     h('div', { class: 'day-head' }, h('h2', {}, 'Seu dia'), stats && h('span', { class: 'prog' }, stats.complete ? 'tudo feito!' : `${stats.done} de ${stats.total}`), stats && h('span', { class: 'ring', style: { '--p': pct } }, stats.complete ? icon('check') : null))
   );
@@ -224,5 +274,5 @@ export function render(root, ctx) {
     nextBox = h('section', {}, h('h2', { class: 'sec-title' }, icon('mes'), 'Vem aí'), grid);
   }
 
-  root.append(head, dateLine, h('div', { class: 'stack' }, hero, ontem, dayCard, nextBox));
+  root.append(head, week, nowCard, h('div', { class: 'stack' }, ontem, dayCard, nextBox));
 }
