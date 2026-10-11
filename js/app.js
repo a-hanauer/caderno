@@ -4,6 +4,7 @@ import { today, h, clear, VERSION } from './util.js';
 import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
+import { refreshWx } from './weather.js';
 import * as hoje from './views/hoje.js';
 import * as mes from './views/mes.js';
 import * as rotina from './views/rotina.js';
@@ -144,6 +145,10 @@ function maybeSync(force) {
   if (force || age === null || age >= 30) syncEvents().then((r) => r.ok && softRender());
 }
 
+function maybeWx(force) {
+  refreshWx(force).then((r) => r && softRender());
+}
+
 function tick() {
   const d = today();
   if (d === day) return;
@@ -173,6 +178,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     tick();
     maybeSync(false);
+    maybeWx(false);
   }
 });
 window.addEventListener('online', () => maybeSync(true));
@@ -186,6 +192,7 @@ setInterval(tick, 30000);
   }
   started = true;
   maybeSync(false);
+  maybeWx(false);
 })();
 
 // ---------- versão nova: recarrega sozinho quando o app ficou aberto/suspenso numa versão velha ----------

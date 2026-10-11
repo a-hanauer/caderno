@@ -4,6 +4,7 @@ import { exportCode, decodeCode, applyImport, encodeConn, decodeConn, connLink, 
 import { syncEvents, syncStatus, REASONS, minutesAgo, resetIndex } from '../events.js';
 import { icon, openSheet, toast, confirmSheet } from '../ui.js';
 import { h, VERSION } from '../util.js';
+import { wxPlace, refreshWx, searchPlace } from '../weather.js';
 
 // ---------- PIN (trava de criança, não é segurança forte) ----------
 async function hashPin(pin, salt) {
@@ -216,6 +217,40 @@ export function render(root, ctx) {
   kwMae.addEventListener('change', () => commit((x) => (x.settings.kwMae = kwMae.value.slice(0, 80)), { silent: true }));
   const casas = sec('Casas', group(field('Palavras da casa do Papai', kwPai), field('Palavras da casa da Mamãe', kwMae)), note('Eventos de dia inteiro com uma dessas palavras no título dizem em qual casa ele dorme. Separe por vírgula. Ex.: "André" ou "André - pai".'));
 
+  // ===== previsão do tempo =====
+  const place = wxPlace();
+  const setPlace = (pl) => {
+    commit((x) => (x.settings.wx = pl), { silent: true });
+    if (pl) refreshWx(true).then((r) => toast(r ? 'Previsão atualizada.' : 'Não consegui buscar a previsão agora.'));
+    ctx.rerender();
+  };
+  const q = h('input', { class: 'set-in', type: 'search', placeholder: 'Ex.: Porto Alegre', 'aria-label': 'Cidade', autocapitalize: 'words', spellcheck: 'false' });
+  const results = h('div', {});
+  const doSearch = async () => {
+    const v = q.value.trim();
+    if (v.length < 2) return q.focus();
+    results.replaceChildren(h('p', { class: 'set-note' }, 'Buscando…'));
+    try {
+      const list = await searchPlace(v);
+      results.replaceChildren(...(list.length ? list.map((r) => h('button', { class: 'set-row', type: 'button', onClick: () => setPlace({ name: r.name, lat: r.lat, lon: r.lon }) }, icon('casa'), h('span', { class: 'tx' }, r.name, h('small', {}, r.region)), icon('right'))) : [h('p', { class: 'set-note' }, 'Nenhuma cidade encontrada.')]));
+    } catch {
+      results.replaceChildren(h('p', { class: 'set-note' }, 'Sem internet ou a busca falhou.'));
+    }
+  };
+  q.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), doSearch()));
+  const here = btn('Usar a localização', { ic: 'casa', onClick: () => {
+    if (!navigator.geolocation) return toast('Este aparelho não informa a localização.');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setPlace({ name: 'Localização do aparelho', lat: Math.round(pos.coords.latitude * 100) / 100, lon: Math.round(pos.coords.longitude * 100) / 100 }),
+      () => toast('Não consegui a localização. Busque pela cidade.'),
+      { timeout: 15000, maximumAge: 3600000 }
+    );
+  } });
+  const wxKids = [h('div', { class: 'set-status ' + (place ? 'ok' : '') }, h('i'), h('div', {}, place ? place.name : 'Sem cidade definida', h('small', {}, place ? 'A previsão aparece na tela Hoje' : 'Defina uma cidade para ver a previsão em Hoje')))];
+  wxKids.push(field('Buscar cidade', q), h('div', { class: 'set-btns' }, btn('Buscar', { cls: 'primary', onClick: doSearch }), here), results);
+  if (place) wxKids.push(h('button', { class: 'set-row danger', type: 'button', onClick: () => setPlace(null) }, icon('close'), h('span', { class: 'tx' }, 'Tirar a previsão')));
+  const tempo = sec('Previsão do tempo', group(...wxKids), note('Dados do Open-Meteo. A cidade vai junto no código de dados, para o outro celular.'));
+
   // ===== backup =====
   const incl = h('input', { type: 'checkbox' });
   const out = h('div', {});
@@ -277,7 +312,7 @@ export function render(root, ctx) {
     ctx.go('hoje');
   } }, icon('trash'), h('span', { class: 'tx' }, 'Apagar tudo deste aparelho'))));
 
-  root.append(h('div', { class: 'set' }, bar, agenda, casas, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
+  root.append(h('div', { class: 'set' }, bar, agenda, casas, tempo, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
 }
 
 async function connect(u, t, btn, ctx) {

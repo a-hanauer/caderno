@@ -35,7 +35,7 @@ function defaults() {
   return {
     v: 1,
     profile: { name: 'Criança' },
-    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai', kwMae: 'mãe, mae, mamãe, mamae' },
+    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai', kwMae: 'mãe, mae, mamãe, mamae', wx: null },
     routine: defaultRoutine(),
     log: {}, // 'YYYY-MM-DD' -> { plan:[{id,label,emoji,block}], done:[ids] }
     tasks: [], // { id, text, due:'YYYY-MM-DD'|null, done, doneAt, created }
