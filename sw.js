@@ -1,7 +1,7 @@
 // Service worker: deixa o Caderno funcionar sem internet.
-// Estratégia: responde na hora com a cópia guardada e atualiza em segundo plano
-// (a versão nova aparece na abertura seguinte). Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v16';
+// Estratégia: rede primeiro (sempre a versão mais nova quando há internet), com a cópia
+// guardada como reserva sem internet. Não mexe nas chamadas ao Google.
+const VERSION = 'caderno-v17';
 const SHELL = [
   './',
   './index.html',
@@ -45,21 +45,29 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Google Agenda etc.: direto na rede
 
+  // fonte e ícones quase nunca mudam: cópia guardada primeiro
+  const stable = /\/(fonts|icons)\//.test(url.pathname);
+
   e.respondWith(
     caches.open(VERSION).then(async (cache) => {
-      const cached = await cache.match(req, { ignoreSearch: true });
-      const fresh = fetch(req)
-        .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone());
-          return res;
-        })
-        .catch(() => null);
-      if (cached) {
-        e.waitUntil(fresh);
-        return cached;
+      if (stable) {
+        const hit = await cache.match(req, { ignoreSearch: true });
+        if (hit) return hit;
       }
-      const res = await fresh;
-      if (res) return res;
+      // o resto (página, código, estilos): rede primeiro, para sempre abrir a versão mais nova.
+      // Sem internet (ou rede lenta demais), usa a cópia guardada.
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 4000);
+        const res = await fetch(req, { cache: 'no-cache', signal: ctrl.signal });
+        clearTimeout(timer);
+        if (res && res.ok) {
+          cache.put(req, res.clone());
+          return res;
+        }
+      } catch {}
+      const cached = await cache.match(req, { ignoreSearch: true });
+      if (cached) return cached;
       if (req.mode === 'navigate') return (await cache.match('./index.html')) || Response.error();
       return Response.error();
     })

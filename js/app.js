@@ -1,6 +1,6 @@
 // Caderno — ponto de entrada: rotas, abas, sincronização e virada do dia.
 import { state, subscribe, ensureLog, pruneLog, setConn } from './store.js';
-import { today, h, clear } from './util.js';
+import { today, h, clear, VERSION } from './util.js';
 import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
@@ -182,6 +182,34 @@ setInterval(tick, 30000);
   started = true;
   maybeSync(false);
 })();
+
+// ---------- versão nova: recarrega sozinho quando o app ficou aberto/suspenso numa versão velha ----------
+let lastCheck = 0;
+async function checkUpdate() {
+  if (Date.now() - lastCheck < 60000) return;
+  lastCheck = Date.now();
+  try {
+    const r = await fetch('./sw.js', { cache: 'no-store' });
+    const m = (await r.text()).match(/caderno-(v\d+)/);
+    if (!m || m[1] === VERSION) return;
+    const a = document.activeElement;
+    if (document.body.classList.contains('sheet-open') || (a && /^(INPUT|TEXTAREA)$/.test(a.tagName))) {
+      lastCheck = 0; // tenta de novo daqui a pouco
+      return;
+    }
+    const reg = await navigator.serviceWorker?.getRegistration();
+    reg && (await reg.update().catch(() => {}));
+    // no máximo uma recarga automática a cada 10 minutos (evita laço se a rede estiver ruim)
+    let last = 0;
+    try { last = +localStorage.getItem('caderno-reload') || 0; } catch {}
+    if (Date.now() - last < 600000) return;
+    try { localStorage.setItem('caderno-reload', String(Date.now())); } catch {}
+    location.reload();
+  } catch {}
+}
+setInterval(checkUpdate, 5 * 60000);
+document.addEventListener('visibilitychange', () => !document.hidden && checkUpdate());
+checkUpdate();
 
 navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {});
 if ('serviceWorker' in navigator && window.isSecureContext) {
