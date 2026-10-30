@@ -12,6 +12,16 @@ import * as tarefas from './views/tarefas.js';
 import * as ajustes from './views/ajustes.js';
 
 const VIEWS = { hoje, mes, rotina, tarefas, ajustes };
+
+// Dentro do app iOS (Capacitor) o código é o mesmo do site; só muda o que depende do navegador.
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+if (NATIVE) {
+  document.documentElement.classList.add('native');
+  const SB = window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+  // cabeçalhos coloridos: texto claro na barra de status, desenhada por cima do app
+  SB && SB.setOverlaysWebView && SB.setOverlaysWebView({ overlay: true }).catch(() => {});
+  SB && SB.setStyle && SB.setStyle({ style: 'DARK' }).catch(() => {});
+}
 const TABS = [
   ['hoje', 'Hoje'],
   ['rotina', 'Rotina'],
@@ -200,6 +210,7 @@ setInterval(tick, 30000);
 // ---------- versão nova: recarrega sozinho quando o app ficou aberto/suspenso numa versão velha ----------
 let lastCheck = 0;
 async function checkUpdate() {
+  if (NATIVE) return; // no app, as versões novas chegam pelo TestFlight / App Store
   if (Date.now() - lastCheck < 60000) return;
   lastCheck = Date.now();
   try {
@@ -229,7 +240,7 @@ navigator.storage && navigator.storage.persist && navigator.storage.persist().ca
 // O service worker (modo offline) só roda no app da Tela de Início. No Safari ele fica desligado:
 // no iOS 26/27, com service worker ativo, "Adicionar à Tela de Início" não pega o ícone e mostra só a letra "C".
 const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-if ('serviceWorker' in navigator && window.isSecureContext) {
+if (!NATIVE && 'serviceWorker' in navigator && window.isSecureContext) {
   if (standalone) navigator.serviceWorker.register('./sw.js').catch(() => {});
   else {
     navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
