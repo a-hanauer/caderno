@@ -2,6 +2,7 @@
 // detecção da casa (pai/mãe) e categorias.
 import { state, getConn, getCache, setCache } from './store.js';
 import { addDays, diffDays, norm, today } from './util.js';
+import { calPlugin, iphoneCalIds, usingIphoneCal } from './native.js';
 
 // ---------- categorias (por palavras no título) ----------
 export const CATS = [
@@ -152,7 +153,8 @@ export function isSyncing() {
 export function syncStatus() {
   const conn = getConn();
   const cache = getCache();
-  return { connected: !!conn, fetchedAt: cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
+  const iphone = usingIphoneCal();
+  return { connected: !!conn || iphone, source: iphone ? 'iphone' : conn ? 'script' : null, fetchedAt: cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
 }
 
 export function minutesAgo(ts) {
@@ -162,6 +164,25 @@ export function minutesAgo(ts) {
 /** busca os eventos no Apps Script. Nunca lança erro: devolve {ok, reason} */
 export function syncEvents() {
   if (inflight) return inflight;
+  // app iOS com agendas do iPhone escolhidas: lê direto do aparelho (EventKit), sem internet nem Apps Script
+  if (usingIphoneCal() && calPlugin()) {
+    inflight = (async () => {
+      try {
+        const from = addDays(today(), -40);
+        const to = addDays(today(), 400);
+        const r = await calPlugin().events({ from, to, calendars: iphoneCalIds() });
+        const list = sanitize(r && r.events);
+        setCache({ events: list, fetchedAt: Date.now(), from, to, src: 'iphone' });
+        memo = { sig: '', idx: null };
+        return { ok: true, count: list.length };
+      } catch (e) {
+        return { ok: false, reason: String(e && e.message) === 'sem-permissao' ? 'permissao' : 'iphone', detail: String((e && e.message) || e).slice(0, 80) };
+      } finally {
+        inflight = null;
+      }
+    })();
+    return inflight;
+  }
   const conn = getConn();
   if (!conn) return Promise.resolve({ ok: false, reason: 'sem-conexao' });
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve({ ok: false, reason: 'offline' });
@@ -208,6 +229,8 @@ export function resetIndex() {
 
 export const REASONS = {
   'sem-conexao': 'A agenda ainda não está conectada.',
+  permissao: 'O Caderno não tem acesso à agenda do iPhone. Libere em Ajustes do iPhone › Apps › Caderno › Calendários.',
+  iphone: 'Não consegui ler a agenda do iPhone agora.',
   offline: 'Sem internet agora. Usando a última cópia.',
   token: 'O código de acesso não foi aceito. Confira o token.',
   resposta: 'A resposta do Google veio estranha. Confira o endereço.',

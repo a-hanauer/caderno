@@ -5,6 +5,7 @@ import { syncEvents, syncStatus, REASONS, minutesAgo, resetIndex } from '../even
 import { icon, openSheet, toast, confirmSheet } from '../ui.js';
 import { h, VERSION } from '../util.js';
 import { wxPlace, refreshWx, searchPlace } from '../weather.js';
+import { NATIVE, calPlugin, iphoneCalIds, setIphoneCalIds } from '../native.js';
 
 // ---------- PIN (trava de criança, não é segurança forte) ----------
 async function hashPin(pin, salt) {
@@ -145,6 +146,78 @@ function diag() {
   return 'diag: ' + f.join(' · ');
 }
 
+// ===== agenda do iPhone (app nativo) =====
+function iphoneSection({ sec, group, note, btn, ctx, st }) {
+  const plugin = calPlugin();
+  const box = group(h('div', { class: 'set-status' }, h('i'), h('div', {}, 'Verificando a agenda do iPhone…')));
+  const section = sec('Agenda do iPhone', box, note('A agenda do Google aparece aqui depois de adicionar a conta Google em Ajustes do iPhone › Apps › Calendário › Contas. As palavras das casas e as regras de título continuam valendo.'));
+  if (!plugin) {
+    box.replaceChildren(h('div', { class: 'set-status bad' }, h('i'), h('div', {}, 'Leitura da agenda indisponível', h('small', {}, 'Esta versão do app não tem o módulo da agenda.'))));
+    return section;
+  }
+  (async () => {
+    let status = 'denied';
+    try {
+      status = (await plugin.status()).status;
+    } catch {}
+    const kids = [];
+    if (status === 'prompt') {
+      kids.push(h('div', { class: 'set-status' }, h('i'), h('div', {}, 'Sem acesso à agenda ainda', h('small', {}, 'O iPhone vai perguntar se o Caderno pode ler a agenda.'))));
+      kids.push(h('div', { class: 'set-btns' }, btn('Permitir acesso à agenda', { cls: 'primary', ic: 'mes', onClick: async () => {
+        try { await plugin.requestAccess(); } catch {}
+        ctx.rerender();
+      } })));
+    } else if (status !== 'granted') {
+      kids.push(h('div', { class: 'set-status bad' }, h('i'), h('div', {}, 'Sem acesso à agenda', h('small', {}, 'Libere em Ajustes do iPhone › Apps › Caderno › Calendários (acesso total).'))));
+      kids.push(h('div', { class: 'set-btns' }, btn('Abrir os Ajustes do iPhone', { onClick: () => plugin.openSettings().catch(() => {}) })));
+    } else {
+      let cals = [];
+      try {
+        cals = (await plugin.listCalendars()).calendars || [];
+      } catch {}
+      const chosen = new Set(iphoneCalIds());
+      const n = cals.filter((c) => chosen.has(c.id)).length;
+      kids.push(h('div', { class: 'set-status ' + (n ? 'ok' : '') }, h('i'), h('div', {}, n ? `Lendo ${n} agenda${n > 1 ? 's' : ''} do iPhone` : 'Escolha as agendas que contam', h('small', {}, n ? (st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Ainda não atualizada') : 'Marque abaixo a agenda do Sebastião (ou as que tiverem casa e compromissos).'))));
+      // agendas agrupadas pela conta (iCloud, Google…)
+      const bySrc = new Map();
+      for (const c of cals) {
+        if (!bySrc.has(c.source)) bySrc.set(c.source, []);
+        bySrc.get(c.source).push(c);
+      }
+      for (const [src, list] of bySrc) {
+        kids.push(h('div', { class: 'set-field' }, h('span', {}, src || 'Outras')));
+        for (const c of list.sort((a, b) => a.title.localeCompare(b.title))) {
+          const cb = h('input', { type: 'checkbox', checked: chosen.has(c.id), 'aria-label': c.title });
+          cb.addEventListener('change', async () => {
+            const ids = new Set(iphoneCalIds());
+            cb.checked ? ids.add(c.id) : ids.delete(c.id);
+            setIphoneCalIds([...ids]);
+            if (ids.size) await syncEvents();
+            else {
+              localStorage.removeItem('caderno:v1:cache');
+              resetIndex();
+            }
+            ctx.rerender();
+          });
+          kids.push(h('label', { class: 'set-check cal-pick' }, cb, h('i', { class: 'cal-dot', style: { background: c.color } }), h('span', {}, c.title)));
+        }
+      }
+      if (!cals.length) kids.push(h('p', { class: 'set-note' }, 'Nenhuma agenda no iPhone ainda.'));
+      if (n) {
+        const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
+          upd.disabled = true;
+          const r = await syncEvents();
+          toast(r.ok ? `Pronto: ${r.count} eventos.` : REASONS[r.reason] || 'Não deu certo agora.');
+          ctx.rerender();
+        } });
+        kids.push(h('div', { class: 'set-btns' }, upd));
+      }
+    }
+    box.replaceChildren(...kids);
+  })();
+  return section;
+}
+
 export function render(root, ctx) {
   root.className = 'page set-page';
   const st = syncStatus();
@@ -202,7 +275,9 @@ export function render(root, ctx) {
       }
     } }, icon('close'), h('span', { class: 'tx' }, 'Desconectar a agenda')));
   }
-  const agenda = sec('Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
+  const agendaWeb = sec(NATIVE ? 'Apps Script (reserva)' : 'Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
+  // no app iOS a agenda vem do próprio iPhone; o Apps Script só aparece se já estava conectado
+  const agenda = NATIVE ? h('div', {}, iphoneSection({ sec, group, note, btn, ctx, st }), conn ? agendaWeb : null) : agendaWeb;
 
   // ===== casas =====
   const kwPai = h('input', { class: 'set-in', type: 'text', value: state.settings.kwPai, 'aria-label': 'Palavras da casa do Papai', autocapitalize: 'off', spellcheck: 'false' });
