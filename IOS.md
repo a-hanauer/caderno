@@ -30,6 +30,13 @@ e, se pedir, confiar no seu certificado em Ajustes › Geral › VPN e Gerenciam
 
 Depois de criar a pasta `ios/`, faça commit dela (o `.gitignore` já deixa de fora o que é gerado).
 
+## Código nativo próprio (agenda do iPhone)
+
+O que é Swift do Caderno fica em `native/ios/`. O script `npm run ios:native` (já incluído no `ios:add` e no `ios:sync`)
+copia esses arquivos para o projeto, troca o controlador do Main.storyboard pelo `CadernoViewController` (que registra
+os plugins) e põe no Info.plist o texto do pedido de acesso à agenda. Se o script avisar, arraste os `.swift` da pasta
+`ios/App/App` para dentro da pasta App no Xcode, com o alvo App marcado (só uma vez).
+
 ## Depois de mudar o código web
 
 ```sh

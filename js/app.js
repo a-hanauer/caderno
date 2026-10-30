@@ -5,6 +5,7 @@ import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
 import { refreshWx } from './weather.js';
+import { NATIVE, calPlugin, usingIphoneCal } from './native.js';
 import * as hoje from './views/hoje.js';
 import * as mes from './views/mes.js';
 import * as rotina from './views/rotina.js';
@@ -14,7 +15,6 @@ import * as ajustes from './views/ajustes.js';
 const VIEWS = { hoje, mes, rotina, tarefas, ajustes };
 
 // Dentro do app iOS (Capacitor) o código é o mesmo do site; só muda o que depende do navegador.
-const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 if (NATIVE) {
   document.documentElement.classList.add('native');
   const SB = window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
@@ -152,6 +152,7 @@ function consumeSetupHash() {
 function maybeSync(force) {
   const st = syncStatus();
   if (!st.connected) return;
+  if (st.source === 'iphone') force = true; // ler a agenda do aparelho é instantâneo: sempre atualiza
   const age = minutesAgo(st.fetchedAt);
   if (force || age === null || age >= 30) syncEvents().then((r) => r.ok && softRender());
 }
@@ -185,6 +186,12 @@ subscribe(() => {
 });
 
 window.addEventListener('hashchange', onHash);
+// a agenda do iPhone mudou (o Google sincronizou, alguém editou): relê e redesenha
+if (NATIVE && calPlugin()) {
+  try {
+    calPlugin().addListener('changed', () => usingIphoneCal() && syncEvents().then((r) => r.ok && softRender()));
+  } catch {}
+}
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     if (document.documentElement.classList.contains('fullbug')) setTimeout(() => window.scrollTo(0, 80), 60);
