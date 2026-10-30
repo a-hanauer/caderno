@@ -1,17 +1,38 @@
 // Ponte com o app iOS (Capacitor). No site, tudo aqui fica desligado.
 export const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
+// O app não usa empacotador (bundler), então o runtime JS do @capacitor/core não está carregado:
+// só existe a ponte nativa (window.Capacitor.nativePromise / nativeCallback). Este é um registerPlugin mínimo sobre ela.
+export function plugin(name) {
+  const C = window.Capacitor;
+  if (!NATIVE || !C) return null;
+  if (typeof C.registerPlugin === 'function') {
+    try {
+      return C.registerPlugin(name);
+    } catch {}
+  }
+  if (typeof C.nativePromise !== 'function') return null;
+  return new Proxy(
+    {},
+    {
+      get(_, method) {
+        if (method === 'then') return undefined; // não é uma promise
+        if (method === 'addListener')
+          return (eventName, fn) => {
+            const id = C.nativeCallback(name, 'addListener', { eventName }, (data) => fn(data));
+            return Promise.resolve({ remove: () => C.nativePromise(name, 'removeListener', { callbackId: id, eventName }) });
+          };
+        return (opts = {}) => C.nativePromise(name, String(method), opts);
+      },
+    }
+  );
+}
+
 let cal = null;
 /** plugin Swift que lê a agenda do iPhone (EventKit). null no site ou se o plugin não estiver no app. */
 export function calPlugin() {
   if (!NATIVE) return null;
-  if (!cal) {
-    try {
-      cal = window.Capacitor.registerPlugin('CadernoCalendar');
-    } catch {
-      cal = null;
-    }
-  }
+  if (!cal) cal = plugin('CadernoCalendar');
   return cal;
 }
 
@@ -37,13 +58,7 @@ export const usingIphoneCal = () => NATIVE && iphoneCalIds().length > 0;
 let hp = null;
 const haptics = () => {
   if (!NATIVE) return null;
-  if (!hp) {
-    try {
-      hp = window.Capacitor.registerPlugin('Haptics');
-    } catch {
-      hp = null;
-    }
-  }
+  if (!hp) hp = plugin('Haptics');
   return hp;
 };
 /** 'light' (marcar, trocar de aba) · 'success' (rotina completa) · 'error' (PIN errado) */
@@ -60,12 +75,6 @@ export function haptic(kind = 'light') {
 let ln = null;
 export function notifPlugin() {
   if (!NATIVE) return null;
-  if (!ln) {
-    try {
-      ln = window.Capacitor.registerPlugin('LocalNotifications');
-    } catch {
-      ln = null;
-    }
-  }
+  if (!ln) ln = plugin('LocalNotifications');
   return ln;
 }
