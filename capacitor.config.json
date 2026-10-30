@@ -1,0 +1,13 @@
+{
+  "appId": "com.andrehanauer.caderno",
+  "appName": "Caderno",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#2b5cae"
+  },
+  "plugins": {
+    "StatusBar": { "overlaysWebView": true, "style": "DARK" }
+  }
+}
