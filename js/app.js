@@ -5,7 +5,7 @@ import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
 import { refreshWx } from './weather.js';
-import { NATIVE, calPlugin, usingIphoneCal, haptic } from './native.js';
+import { NATIVE, calPlugin, usingIphoneCal, haptic, plugin } from './native.js';
 import { scheduleReminders } from './reminders.js';
 import * as hoje from './views/hoje.js';
 import * as mes from './views/mes.js';
@@ -18,10 +18,10 @@ const VIEWS = { hoje, mes, rotina, tarefas, ajustes };
 // Dentro do app iOS (Capacitor) o código é o mesmo do site; só muda o que depende do navegador.
 if (NATIVE) {
   document.documentElement.classList.add('native');
-  const SB = window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+  const SB = plugin('StatusBar');
   // cabeçalhos coloridos: texto claro na barra de status, desenhada por cima do app
-  SB && SB.setOverlaysWebView && SB.setOverlaysWebView({ overlay: true }).catch(() => {});
-  SB && SB.setStyle && SB.setStyle({ style: 'DARK' }).catch(() => {});
+  SB && SB.setOverlaysWebView({ overlay: true }).catch(() => {});
+  SB && SB.setStyle({ style: 'DARK' }).catch(() => {});
 }
 const TABS = [
   ['hoje', 'Hoje'],
