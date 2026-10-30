@@ -1,5 +1,5 @@
 // Códigos compartilháveis: backup/transferência dos dados e conexão com o Google Agenda.
-import { state, getConn, getCache, setCache, replaceState, setConn, getDefaults } from './store.js';
+import { state, getConn, getCache, setCache, replaceState, setConn, getDefaults, getIcs, setIcs } from './store.js';
 import { isYmd, uid, addDays, today } from './util.js';
 
 const enc = new TextEncoder();
@@ -29,6 +29,7 @@ export async function exportCode({ withConn = false } = {}) {
   const { pinHash, pinSalt, ...settings } = state.settings;
   const payload = { app: 'caderno', v: 1, at: new Date().toISOString(), profile: state.profile, settings, routine: state.routine, tasks: state.tasks, log };
   if (withConn && getConn()) payload.conn = getConn();
+  if (withConn && getIcs()) payload.ics = getIcs();
   // cópia dos eventos da agenda (para aparelhos que não conseguem falar com o Google)
   const cache = getCache();
   if (cache?.events?.length) payload.ev = { at: cache.fetchedAt || 0, from: cache.from, to: cache.to, e: cache.events.map((x) => [x.title, x.allDay ? 1 : 0, x.start, x.end]) };
@@ -70,6 +71,7 @@ function sanitizePayload(o) {
     tasks: [],
     log: {},
     conn: null,
+    ics: null,
     ev: null,
   };
   if (o.ev && Array.isArray(o.ev.e)) {
@@ -112,6 +114,7 @@ function sanitizePayload(o) {
       done: Array.isArray(v.done) ? v.done.slice(0, 60).map((x) => str(x, 40)) : [],
     };
   }
+  if (o.ics && typeof o.ics.u === 'string' && /^https:\/\//.test(o.ics.u)) out.ics = { u: str(o.ics.u, 500) };
   if (o.conn && typeof o.conn.u === 'string' && typeof o.conn.t === 'string') out.conn = { u: str(o.conn.u, 300), t: str(o.conn.t, 200) };
   return out;
 }
@@ -148,6 +151,7 @@ export function applyImport(data, mode) {
     replaceState({ ...state, routine, tasks, log });
   }
   if (data.conn) setConn(data.conn);
+  if (data.ics) setIcs(data.ics);
   if (data.ev && data.ev.fetchedAt >= (getCache()?.fetchedAt || 0)) setCache(data.ev);
 }
 

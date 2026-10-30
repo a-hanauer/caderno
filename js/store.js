@@ -119,6 +119,18 @@ export const setConn = (c) => {
     else localStorage.removeItem(KEY_CONN);
   } catch {}
 };
+// link iCal da agenda (ex.: endereço secreto do Google Agenda)
+const KEY_ICS = 'caderno:v1:ics';
+export const getIcs = () => {
+  const c = readJSON(KEY_ICS);
+  return c && typeof c.u === 'string' ? c : null;
+};
+export const setIcs = (c) => {
+  try {
+    if (c) localStorage.setItem(KEY_ICS, JSON.stringify(c));
+    else localStorage.removeItem(KEY_ICS);
+  } catch {}
+};
 export const getCache = () => readJSON(KEY_CACHE);
 export const setCache = (c) => {
   try {

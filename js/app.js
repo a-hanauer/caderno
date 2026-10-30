@@ -156,6 +156,7 @@ function maybeSync(force) {
   if (!st.connected) return;
   if (st.source === 'iphone') force = true; // ler a agenda do aparelho é instantâneo: sempre atualiza
   const age = minutesAgo(st.fetchedAt);
+  if (st.source === 'ics' && age !== null && age >= 10) force = true; // link: a cada 10 min no máximo
   if (force || age === null || age >= 30) syncEvents().then((r) => r.ok && softRender());
 }
 
