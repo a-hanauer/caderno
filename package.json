@@ -5,7 +5,7 @@
   "description": "Caderno: agenda, rotina e tarefas. App iOS com Capacitor; o site continua na raiz para o GitHub Pages.",
   "scripts": {
     "build": "node scripts/build-www.mjs",
-    "ios:add": "npm run build && npx cap add ios && sh scripts/ios-setup.sh",
+    "ios:add": "npm run build && npx cap add ios --packagemanager SPM && sh scripts/ios-setup.sh",
     "ios:sync": "npm run build && npx cap sync ios",
     "ios:open": "npx cap open ios"
   },
