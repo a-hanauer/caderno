@@ -1,6 +1,7 @@
 // Componentes de interface compartilhados: ícones, folhas (sheets), avisos, checkbox desenhado à mão.
 import { h } from './util.js';
 import { iconMarkup, iconKey, ROUTINE_ICONS } from './icons.js';
+import { haptic } from './native.js';
 
 /** ícone próprio (veja icons.js). Aceita também ids antigos de emoji. */
 export const icon = (name, cls) => {
@@ -44,6 +45,7 @@ export function celebrate(title = 'Tudo feito!', sub = '') {
   };
   ov.addEventListener('click', end);
   setTimeout(end, reduce ? 1800 : 3200);
+  haptic('success');
   try { navigator.vibrate && navigator.vibrate([30, 60, 30]); } catch {}
   if (reduce) return;
   // ---- confete ----

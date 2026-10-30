@@ -5,7 +5,8 @@ import { syncEvents, syncStatus, REASONS, minutesAgo, resetIndex } from '../even
 import { icon, openSheet, toast, confirmSheet } from '../ui.js';
 import { h, VERSION } from '../util.js';
 import { wxPlace, refreshWx, searchPlace } from '../weather.js';
-import { NATIVE, calPlugin, iphoneCalIds, setIphoneCalIds } from '../native.js';
+import { NATIVE, calPlugin, iphoneCalIds, setIphoneCalIds, haptic } from '../native.js';
+import { notifSettings, notifPermission, testReminder, scheduleReminders } from '../reminders.js';
 
 // ---------- PIN (trava de criança, não é segurança forte) ----------
 async function hashPin(pin, salt) {
@@ -42,6 +43,7 @@ function keypad({ title, text, check, cta = 'Continuar' }) {
       if (await check(v)) finish(true);
       else {
         msg.textContent = 'PIN errado. Tente de novo.';
+        haptic('error');
         msg.classList.add('err');
         input.classList.add('shake');
         setTimeout(() => input.classList.remove('shake'), 420);
@@ -202,7 +204,7 @@ function iphoneSection({ sec, group, note, btn, ctx, st }) {
           kids.push(h('label', { class: 'set-check cal-pick' }, cb, h('i', { class: 'cal-dot', style: { background: c.color } }), h('span', {}, c.title)));
         }
       }
-      if (!cals.length) kids.push(h('p', { class: 'set-note' }, 'Nenhuma agenda no iPhone ainda.'));
+      if (!cals.length) kids.push(h('p', { class: 'set-note', style: { margin: '0', padding: '10px 14px 12px' } }, 'Nenhuma agenda no iPhone ainda.'));
       if (n) {
         const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
           upd.disabled = true;
@@ -320,6 +322,42 @@ export function render(root, ctx) {
   if (place) wxKids.push(h('button', { class: 'set-row danger', type: 'button', onClick: () => setPlace(null) }, icon('close'), h('span', { class: 'tx' }, 'Tirar a previsão')));
   const tempo = sec('Previsão do tempo', group(...wxKids), note('Dados do Open-Meteo. A cidade vai junto no código de dados, para o outro celular.'));
 
+  // ===== lembretes (app iOS) =====
+  let lembretes = null;
+  if (NATIVE) {
+    const ns = notifSettings();
+    const save = (patch) => {
+      commit((x) => (x.settings.notif = { ...notifSettings(), ...patch }), { silent: true });
+      scheduleReminders();
+    };
+    const onCb = h('input', { type: 'checkbox', checked: ns.on, 'aria-label': 'Lembretes ligados' });
+    onCb.addEventListener('change', () => (save({ on: onCb.checked }), ctx.rerender()));
+    const tIn = (key, label) => {
+      const i = h('input', { class: 'set-in', type: 'time', value: ns[key], 'aria-label': label });
+      i.addEventListener('change', () => /^\d\d:\d\d$/.test(i.value) && save({ [key]: i.value }));
+      return h('label', { class: 'set-field' }, h('span', {}, label), i);
+    };
+    const permBox = h('div', { class: 'set-status' }, h('i'), h('div', {}, 'Verificando os avisos…'));
+    const kids = [h('label', { class: 'set-check' }, onCb, h('span', {}, 'Lembretes ligados'))];
+    if (ns.on) {
+      kids.push(tIn('manha', 'Rotina da manhã'), tIn('noite', 'Rotina da noite'), tIn('troca', 'Véspera da troca de casa'), permBox);
+      kids.push(h('div', { class: 'set-btns' }, btn('Testar um aviso', { onClick: async () => toast((await testReminder()) ? 'O aviso chega em 5 segundos.' : 'Os avisos estão bloqueados no iPhone.') })));
+      notifPermission(false).then((p) => {
+        if (p === 'granted') {
+          permBox.className = 'set-status ok';
+          permBox.replaceChildren(h('i'), h('div', {}, 'O iPhone permite os avisos'));
+        }
+        else if (p === 'denied') {
+          permBox.className = 'set-status bad';
+          permBox.replaceChildren(h('i'), h('div', {}, 'Avisos bloqueados', h('small', {}, 'Libere em Ajustes do iPhone › Apps › Caderno › Notificações.')));
+          const P = calPlugin();
+          P && permBox.after(h('div', { class: 'set-btns' }, btn('Abrir os Ajustes do iPhone', { onClick: () => P.openSettings().catch(() => {}) })));
+        } else permBox.replaceChildren(h('i'), h('div', {}, 'O iPhone ainda vai perguntar se pode avisar'));
+      });
+    }
+    lembretes = sec('Lembretes', group(...kids), note('Avisa só se ainda faltar algo na rotina. Também avisa 15 minutos antes de tarefas com hora e às 18h na véspera de provas e trabalhos.'));
+  }
+
   // ===== backup =====
   const incl = h('input', { type: 'checkbox' });
   const out = h('div', {});
@@ -381,7 +419,7 @@ export function render(root, ctx) {
     ctx.go('hoje');
   } }, icon('trash'), h('span', { class: 'tx' }, 'Apagar tudo deste aparelho'))));
 
-  root.append(h('div', { class: 'set' }, bar, agenda, casas, tempo, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
+  root.append(h('div', { class: 'set' }, bar, agenda, lembretes, casas, tempo, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
 }
 
 async function connect(u, t, btn, ctx) {
