@@ -1,7 +1,7 @@
 // Service worker: deixa o Caderno funcionar sem internet.
 // Estratégia: rede primeiro (sempre a versão mais nova quando há internet), com a cópia
 // guardada como reserva sem internet. Não mexe nas chamadas ao Google.
-const VERSION = 'caderno-v41';
+const VERSION = 'caderno-v42';
 const SHELL = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const SHELL = [
   './js/weather.js',
   './js/native.js',
   './js/reminders.js',
+  './js/ics.js',
   './js/views/hoje.js',
   './js/views/mes.js',
   './js/views/rotina.js',

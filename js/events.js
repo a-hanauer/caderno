@@ -1,8 +1,9 @@
 // Eventos do Google Agenda (somente leitura): sincronização, cache offline,
 // detecção da casa (pai/mãe) e categorias.
-import { state, getConn, getCache, setCache } from './store.js';
+import { state, getConn, getCache, setCache, getIcs } from './store.js';
+import { parseICS } from './ics.js';
 import { addDays, diffDays, norm, today } from './util.js';
-import { calPlugin, iphoneCalIds, usingIphoneCal } from './native.js';
+import { calPlugin, iphoneCalIds, usingIphoneCal, plugin, NATIVE } from './native.js';
 
 // ---------- categorias (por palavras no título) ----------
 export const CATS = [
@@ -146,6 +147,19 @@ function sanitize(list) {
 }
 
 let inflight = null;
+
+/** baixa texto. No app iOS vai pela rede nativa (sem bloqueio entre sites); no site, fetch comum. */
+async function downloadText(url) {
+  const http = NATIVE ? plugin('CapacitorHttp') : null;
+  if (http) {
+    const r = await http.request({ url, method: 'GET', responseType: 'text', headers: { Accept: 'text/calendar' } });
+    if (r.status >= 400) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
+    return typeof r.data === 'string' ? r.data : String(r.data || '');
+  }
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw Object.assign(new Error('HTTP ' + res.status), { status: res.status });
+  return res.text();
+}
 export function isSyncing() {
   return !!inflight;
 }
@@ -153,8 +167,9 @@ export function isSyncing() {
 export function syncStatus() {
   const conn = getConn();
   const cache = getCache();
-  const iphone = usingIphoneCal();
-  return { connected: !!conn || iphone, source: iphone ? 'iphone' : conn ? 'script' : null, fetchedAt: cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
+  const ics = !!getIcs();
+  const iphone = !ics && usingIphoneCal();
+  return { connected: !!conn || iphone || ics, source: iphone ? 'iphone' : ics ? 'ics' : conn ? 'script' : null, fetchedAt: cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
 }
 
 export function minutesAgo(ts) {
@@ -164,8 +179,31 @@ export function minutesAgo(ts) {
 /** busca os eventos no Apps Script. Nunca lança erro: devolve {ok, reason} */
 export function syncEvents() {
   if (inflight) return inflight;
+  // link iCal (endereço secreto do Google Agenda): baixa e lê o .ics
+  const ics = getIcs();
+  if (ics) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve({ ok: false, reason: 'offline' });
+    inflight = (async () => {
+      try {
+        const text = await downloadText(ics.u);
+        if (!/BEGIN:VCALENDAR/.test(text)) return { ok: false, reason: 'ics-formato' };
+        const from = addDays(today(), -40);
+        const to = addDays(today(), 400);
+        const r = parseICS(text, from, to);
+        const list = sanitize(r.events);
+        setCache({ events: list, fetchedAt: Date.now(), from, to, src: 'ics', name: r.name });
+        memo = { sig: '', idx: null };
+        return { ok: true, count: list.length, name: r.name };
+      } catch (e) {
+        return { ok: false, reason: e && e.status === 404 ? 'ics-404' : 'rede', detail: String((e && e.message) || e).slice(0, 80) };
+      } finally {
+        inflight = null;
+      }
+    })();
+    return inflight;
+  }
   // app iOS com agendas do iPhone escolhidas: lê direto do aparelho (EventKit), sem internet nem Apps Script
-  if (usingIphoneCal() && calPlugin()) {
+  if (!getIcs() && usingIphoneCal() && calPlugin()) {
     inflight = (async () => {
       try {
         const from = addDays(today(), -40);
@@ -231,6 +269,8 @@ export const REASONS = {
   'sem-conexao': 'A agenda ainda não está conectada.',
   permissao: 'O Caderno não tem acesso à agenda do iPhone. Libere em Ajustes do iPhone › Apps › Caderno › Calendários.',
   iphone: 'Não consegui ler a agenda do iPhone agora.',
+  'ics-formato': 'O link não devolveu uma agenda. Confira se é o endereço secreto no formato iCal.',
+  'ics-404': 'O Google não achou essa agenda. O link pode ter sido trocado; copie o endereço secreto de novo.',
   offline: 'Sem internet agora. Usando a última cópia.',
   token: 'O código de acesso não foi aceito. Confira o token.',
   resposta: 'A resposta do Google veio estranha. Confira o endereço.',

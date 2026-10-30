@@ -1,5 +1,6 @@
 // Tela "Ajustes" (área dos pais): conexão com o Google Agenda, casas, backup por código, PIN.
-import { state, commit, getConn, setConn, getCache, clearAllLocal, replaceState, getDefaults } from '../store.js';
+import { state, commit, getConn, setConn, getCache, clearAllLocal, replaceState, getDefaults, getIcs, setIcs } from '../store.js';
+import { normalizeIcsUrl } from '../ics.js';
 import { exportCode, decodeCode, applyImport, encodeConn, decodeConn, connLink, validConnUrl } from '../codec.js';
 import { syncEvents, syncStatus, REASONS, minutesAgo, resetIndex } from '../events.js';
 import { icon, openSheet, toast, confirmSheet } from '../ui.js';
@@ -148,6 +149,59 @@ function diag() {
   return 'diag: ' + f.join(' · ');
 }
 
+// ===== link da agenda (iCal) =====
+function icsSection({ sec, group, note, btn, field, ctx, st }) {
+  const ics = getIcs();
+  const kids = [];
+  const input = h('input', { class: 'set-in', type: 'url', placeholder: 'https://calendar.google.com/calendar/ical/…/basic.ics', 'aria-label': 'Link da agenda', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+  const connectBtn = btn('Conectar e testar', { cls: 'primary', onClick: async () => {
+    const u = normalizeIcsUrl(input.value);
+    if (!u) return toast('Cole o endereço completo, começando com https:// (ou webcal://).');
+    const before = getIcs();
+    connectBtn.disabled = true;
+    connectBtn.lastChild.textContent = 'Testando…';
+    setIcs({ u });
+    const r = await syncEvents();
+    if (r.ok) toast(`Agenda conectada${r.name ? ': ' + r.name : ''}. ${r.count} eventos.`);
+    else {
+      setIcs(before);
+      toast(REASONS[r.reason] || 'Não consegui ler esse link.');
+    }
+    ctx.rerender();
+  } });
+  if (!ics) {
+    kids.push(h('div', { class: 'set-status' }, h('i'), h('div', {}, 'Sem link de agenda', h('small', {}, 'Lê a agenda do Google sem conta no iPhone e sem Apps Script'))));
+    kids.push(h('ol', { class: 'set-steps' },
+      h('li', {}, 'No computador, abra calendar.google.com com a conta do Sebastião.'),
+      h('li', {}, 'Na agenda dele, toque nos três pontos › Configurações e compartilhamento.'),
+      h('li', {}, 'Em "Integrar agenda", copie o "Endereço secreto no formato iCal".'),
+      h('li', {}, 'Cole aqui embaixo e toque em Conectar.')));
+    kids.push(field('Link da agenda (iCal)', input), h('div', { class: 'set-btns' }, connectBtn));
+  } else {
+    const fromIcs = st.source === 'ics';
+    const cache = getCache();
+    kids.push(h('div', { class: 'set-status ' + (fromIcs && st.fetchedAt ? 'ok' : '') }, h('i'), h('div', {}, cache?.name ? `Agenda "${cache.name}"` : 'Link conectado', h('small', {}, st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Ainda não atualizada'))));
+    const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
+      upd.disabled = true;
+      const r = await syncEvents();
+      toast(r.ok ? `Pronto: ${r.count} eventos.` : (REASONS[r.reason] || 'Não deu certo agora.') + (r.detail ? ' [' + r.detail + ']' : ''));
+      ctx.rerender();
+    } });
+    kids.push(h('div', { class: 'set-btns' }, upd));
+    const swap = h('div', { hidden: true }, field('Novo link', input), h('div', { class: 'set-btns' }, connectBtn));
+    kids.push(h('button', { class: 'set-row', type: 'button', onClick: () => { swap.hidden = !swap.hidden; swap.hidden || input.focus(); } }, icon('link'), h('span', { class: 'tx' }, 'Trocar o link'), icon('right')), swap);
+    kids.push(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
+      if (await confirmSheet({ title: 'Remover o link?', text: 'A agenda some do app até conectar de novo. Rotina e tarefas continuam.', yes: 'Remover', danger: true })) {
+        setIcs(null);
+        localStorage.removeItem('caderno:v1:cache');
+        resetIndex();
+        ctx.rerender();
+      }
+    } }, icon('close'), h('span', { class: 'tx' }, 'Remover o link')));
+  }
+  return sec('Link da agenda', group(...kids), note('O link é secreto: quem o tiver vê os títulos da agenda. Ele vai junto no código de dados quando você marca "Incluir a conexão". O app relê a agenda ao abrir e a cada 10 minutos de uso.'));
+}
+
 // ===== agenda do iPhone (app nativo) =====
 function iphoneSection({ sec, group, note, btn, ctx, st }) {
   const plugin = calPlugin();
@@ -279,7 +333,7 @@ export function render(root, ctx) {
   }
   const agendaWeb = sec(NATIVE ? 'Apps Script (reserva)' : 'Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
   // no app iOS a agenda vem do próprio iPhone; o Apps Script só aparece se já estava conectado
-  const agenda = NATIVE ? h('div', {}, iphoneSection({ sec, group, note, btn, ctx, st }), conn ? agendaWeb : null) : agendaWeb;
+  const agenda = NATIVE ? h('div', {}, icsSection({ sec, group, note, btn, field, ctx, st }), getIcs() ? null : iphoneSection({ sec, group, note, btn, ctx, st }), conn && !getIcs() ? agendaWeb : null) : agendaWeb;
 
   // ===== casas =====
   const kwPai = h('input', { class: 'set-in', type: 'text', value: state.settings.kwPai, 'aria-label': 'Palavras da casa do Papai', autocapitalize: 'off', spellcheck: 'false' });
@@ -391,7 +445,7 @@ export function render(root, ctx) {
   const backup = sec(
     'Backup e outro celular',
     group(
-      h('label', { class: 'set-check' }, incl, h('span', {}, 'Incluir a conexão com o Google Agenda (contém o token: não compartilhe em lugar aberto)')),
+      h('label', { class: 'set-check' }, incl, h('span', {}, 'Incluir a conexão da agenda (link ou token: não compartilhe em lugar aberto)')),
       h('div', { class: 'set-btns' }, gen),
       out,
       field('Importar um código', imp),
