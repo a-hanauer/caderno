@@ -15,6 +15,10 @@ $PB -c "Delete :UISupportedInterfaceOrientations" "$PLIST" 2>/dev/null || true
 $PB -c "Add :UISupportedInterfaceOrientations array" "$PLIST"
 $PB -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$PLIST"
 $PB -c "Delete :UISupportedInterfaceOrientations~ipad" "$PLIST" 2>/dev/null || true
+# app só de iPhone e em tela cheia (evita o aviso "All interface orientations must be supported")
+set_key UIRequiresFullScreen bool true
+PBX="ios/App/App.xcodeproj/project.pbxproj"
+[ -f "$PBX" ] && sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/g' "$PBX" && echo "Alvo: só iPhone."
 # nome embaixo do ícone
 set_key CFBundleDisplayName string Caderno
 echo "Info.plist ajustado."
