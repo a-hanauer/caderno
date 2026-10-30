@@ -65,7 +65,7 @@ const WHENS = ['todos', 'escola', 'fds'];
 function sanitizePayload(o) {
   const out = {
     profile: { name: str(o.profile?.name || 'Sebastião', 30) },
-    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai, andré, andre', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae, aline', 80), wx: o.settings?.wx && typeof o.settings.wx.lat === 'number' && typeof o.settings.wx.lon === 'number' && Math.abs(o.settings.wx.lat) <= 90 && Math.abs(o.settings.wx.lon) <= 180 ? { name: str(o.settings.wx.name, 60), lat: o.settings.wx.lat, lon: o.settings.wx.lon } : null },
+    settings: { kwPai: str(o.settings?.kwPai ?? 'pai, papai, andré, andre', 80), kwMae: str(o.settings?.kwMae ?? 'mãe, mae, mamãe, mamae, aline', 80), notif: (() => { const n = o.settings?.notif; const tm = (v, d) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : d); return n && typeof n === 'object' ? { on: n.on !== false, manha: tm(n.manha, '08:00'), noite: tm(n.noite, '19:00'), troca: tm(n.troca, '12:00') } : { on: true, manha: '08:00', noite: '19:00', troca: '12:00' }; })(), wx: o.settings?.wx && typeof o.settings.wx.lat === 'number' && typeof o.settings.wx.lon === 'number' && Math.abs(o.settings.wx.lat) <= 90 && Math.abs(o.settings.wx.lon) <= 180 ? { name: str(o.settings.wx.name, 60), lat: o.settings.wx.lat, lon: o.settings.wx.lon } : null },
     routine: [],
     tasks: [],
     log: {},

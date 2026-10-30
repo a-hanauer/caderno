@@ -1,5 +1,6 @@
 // Estado do app: tudo fica no aparelho (localStorage). Nada disso vai pro GitHub.
 import { today, dayType, addDays, diffDays, isYmd, uid } from './util.js';
+import { haptic } from './native.js';
 
 const KEY = 'caderno:v1:data';
 const KEY_CONN = 'caderno:v1:conn';
@@ -35,7 +36,7 @@ function defaults() {
   return {
     v: 1,
     profile: { name: 'Sebastião' },
-    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai, andré, andre', kwMae: 'mãe, mae, mamãe, mamae, aline', wx: null },
+    settings: { pinHash: null, pinSalt: null, kwPai: 'pai, papai, andré, andre', kwMae: 'mãe, mae, mamãe, mamae, aline', wx: null, notif: { on: true, manha: '08:00', noite: '19:00', troca: '12:00' } },
     routine: defaultRoutine(),
     log: {}, // 'YYYY-MM-DD' -> { plan:[{id,label,emoji,block}], done:[ids] }
     tasks: [], // { id, text, due:'YYYY-MM-DD'|null, done, doneAt, created }
@@ -93,6 +94,8 @@ export function commit(mutator, { silent = false } = {}) {
   mutator(state);
   persist();
   if (!silent) listeners.forEach((fn) => fn());
+  // aviso leve para quem só precisa saber que algo mudou (ex.: refazer os lembretes)
+  try { window.dispatchEvent(new Event('caderno:changed')); } catch {}
 }
 
 /** troca o estado inteiro (importação / zerar) */
@@ -184,7 +187,9 @@ export function toggleRoutine(date, id) {
     },
     { silent: true }
   );
-  return state.log[date].done.includes(id);
+  const on = state.log[date].done.includes(id);
+  if (on) haptic('light');
+  return on;
 }
 
 export function addRoutineItem({ label, emoji, block, when }) {
@@ -259,7 +264,9 @@ export function toggleTask(id) {
     },
     { silent: true }
   );
-  return state.tasks.find((x) => x.id === id)?.done;
+  const on = state.tasks.find((x) => x.id === id)?.done;
+  if (on) haptic('light');
+  return on;
 }
 export function removeTask(id) {
   commit((s) => (s.tasks = s.tasks.filter((t) => t.id !== id)));

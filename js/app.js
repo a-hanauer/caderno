@@ -5,7 +5,8 @@ import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
 import { refreshWx } from './weather.js';
-import { NATIVE, calPlugin, usingIphoneCal } from './native.js';
+import { NATIVE, calPlugin, usingIphoneCal, haptic } from './native.js';
+import { scheduleReminders } from './reminders.js';
 import * as hoje from './views/hoje.js';
 import * as mes from './views/mes.js';
 import * as rotina from './views/rotina.js';
@@ -63,6 +64,7 @@ function render(animate) {
   document.getElementById('app').dataset.area = route;
   if (route !== 'hoje') delete document.body.dataset.cover;
   paintChrome();
+  scheduleReminders();
   if (route !== 'ajustes') {
     const q = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return Math.round(r.top) + '-' + Math.round(r.bottom); };
     window.__lay = { app: q('app'), tabs: q('tabs') };
@@ -118,7 +120,7 @@ async function onHash() {
 // ---------- abas ----------
 function buildTabs() {
   for (const [id, nome] of TABS)
-    tabsEl.append(h('button', { class: 'tab', type: 'button', dataset: { r: id }, 'aria-label': nome, onClick: () => go(id) }, icon(id), h('span', { class: 'tlab' }, nome)));
+    tabsEl.append(h('button', { class: 'tab', type: 'button', dataset: { r: id }, 'aria-label': nome, onClick: () => (id !== route && haptic('light'), go(id)) }, icon(id), h('span', { class: 'tlab' }, nome)));
 }
 function paintTabs() {
   const t = today();
@@ -186,6 +188,7 @@ subscribe(() => {
 });
 
 window.addEventListener('hashchange', onHash);
+window.addEventListener('caderno:changed', scheduleReminders);
 // a agenda do iPhone mudou (o Google sincronizou, alguém editou): relê e redesenha
 if (NATIVE && calPlugin()) {
   try {
