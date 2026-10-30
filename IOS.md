@@ -13,7 +13,7 @@ git clone https://github.com/a-hanauer/caderno.git
 cd caderno
 git checkout app-ios
 npm install
-npm run ios:add     # cria a pasta ios/, ajusta o Info.plist, ícone e tela de abertura
+npm run ios:add     # cria a pasta ios/ (Swift Package Manager, sem CocoaPods), ajusta o Info.plist, ícone e tela de abertura
 npm run ios:open    # abre o projeto no Xcode
 ```
 
