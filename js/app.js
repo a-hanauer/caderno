@@ -5,6 +5,7 @@ import { icon, toast, closeAllSheets } from './ui.js';
 import { syncEvents, syncStatus, minutesAgo } from './events.js';
 import { decodeConn, validConnUrl } from './codec.js';
 import { refreshWx } from './weather.js';
+import { initSync } from './sync.js';
 import * as hoje from './views/hoje.js';
 import * as mes from './views/mes.js';
 import * as rotina from './views/rotina.js';
@@ -185,6 +186,14 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('online', () => maybeSync(true));
 setInterval(tick, 30000);
+// sincronização entre aparelhos (Firebase)
+window.addEventListener('caderno:remote', () => {
+  ensureLog();
+  softRender();
+  paintTabs();
+});
+window.addEventListener('caderno:conn', () => maybeSync(true));
+initSync();
 
 (async () => {
   await onHash();

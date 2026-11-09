@@ -5,6 +5,7 @@ import { syncEvents, syncStatus, REASONS, minutesAgo, resetIndex } from '../even
 import { icon, openSheet, toast, confirmSheet } from '../ui.js';
 import { h, VERSION } from '../util.js';
 import { wxPlace, refreshWx, searchPlace } from '../weather.js';
+import { familyCode, lastSync, syncError, fmtCode, syncNow, createFamily, peekFamily, joinFamily, leaveFamily } from '../sync.js';
 
 // ---------- PIN (trava de criança, não é segurança forte) ----------
 async function hashPin(pin, salt) {
@@ -157,6 +158,63 @@ export function render(root, ctx) {
 
   const bar = h('header', { class: 'set-bar' }, h('button', { class: 'back', type: 'button', onClick: () => ctx.go('hoje') }, icon('left'), 'Voltar'), h('h1', {}, 'Ajustes'));
 
+  // ===== sincronizar aparelhos (Firebase) =====
+  const fid = familyCode();
+  const syncKids = [];
+  if (!fid) {
+    syncKids.push(h('div', { class: 'set-status' }, h('i'), h('div', {}, 'Só neste aparelho', h('small', {}, 'Ligue para ver as mesmas marcações em todos os celulares'))));
+    const start = btn('Começar a sincronizar', { cls: 'primary', ic: 'refresh', onClick: async () => {
+      start.disabled = true;
+      try {
+        await createFamily();
+        toast('Pronto! Agora envie o código para os outros celulares.');
+      } catch (e) {
+        toast(navigator.onLine === false ? 'Sem internet agora.' : 'Não consegui ligar agora. Tente de novo.');
+      }
+      ctx.rerender();
+    } });
+    const code = h('input', { class: 'set-in', type: 'text', placeholder: 'xxxx-xxxx-xxxx-xxxx-xxxx', 'aria-label': 'Código da família', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', style: { fontFamily: 'ui-monospace, Menlo, monospace', letterSpacing: '.04em' } });
+    const join = btn('Entrar', { cls: 'primary', onClick: async () => {
+      join.disabled = true;
+      try {
+        const p = await peekFamily(code.value);
+        const ok = await confirmSheet({ title: 'Usar os dados da família?', text: `Na nuvem há ${p.tasks} tarefas únicas e ${p.days} dias de histórico${p.conn ? ', além da conexão com a agenda' : ''}. O que está neste aparelho será trocado por isso.`, yes: 'Entrar' });
+        if (ok) {
+          await joinFamily(p.fid);
+          toast('Sincronizado!');
+        }
+      } catch (e) {
+        toast(navigator.onLine === false ? 'Sem internet agora.' : e.message);
+      }
+      join.disabled = false;
+      ctx.rerender();
+    } });
+    syncKids.push(h('div', { class: 'set-btns' }, start), field('Já começou em outro celular? Cole o código', code), h('div', { class: 'set-btns' }, join));
+  } else {
+    const err = syncError();
+    const at = lastSync();
+    syncKids.push(h('div', { class: 'set-status ' + (err ? 'bad' : 'ok') }, h('i'), h('div', {}, err ? (err === 'offline' ? 'Sem internet (sincroniza ao voltar)' : 'Não sincronizou da última vez') : 'Sincronizado', h('small', {}, at ? `Última vez ${ago(at)}` : 'Ainda não sincronizou'))));
+    const shown = fmtCode(fid);
+    const codeIn = h('input', { class: 'set-in selectable', type: 'text', readOnly: true, value: shown, 'aria-label': 'Código da família', style: { fontFamily: 'ui-monospace, Menlo, monospace', letterSpacing: '.04em', textAlign: 'center' } });
+    const now = btn('Sincronizar agora', { ic: 'refresh', onClick: async () => {
+      now.disabled = true;
+      const r = await syncNow();
+      toast(r.ok ? 'Sincronizado.' : r.reason === 'offline' ? 'Sem internet agora.' : 'Não deu certo agora.' + (r.detail ? ' [' + r.detail + ']' : ''));
+      ctx.rerender();
+    } });
+    syncKids.push(
+      field('Código da família', codeIn),
+      h('div', { class: 'set-btns' }, btn('Copiar', { cls: 'primary', ic: 'copy', onClick: async () => toast((await copyText(shown)) ? 'Código copiado.' : 'Segure no código para copiar.') }), navigator.share ? btn('Enviar', { ic: 'share', onClick: () => navigator.share({ title: 'Caderno', text: shown }).catch(() => {}) }) : null, now),
+      h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
+        if (await confirmSheet({ title: 'Parar de sincronizar?', text: 'Este aparelho deixa de receber e enviar mudanças. Os dados continuam aqui e nos outros celulares.', yes: 'Parar', danger: true })) {
+          leaveFamily();
+          ctx.rerender();
+        }
+      } }, icon('close'), h('span', { class: 'tx' }, 'Parar de sincronizar neste aparelho'))
+    );
+  }
+  const sincro = sec('Sincronizar aparelhos', group(...syncKids), note(fid ? 'Rotina, tarefas, histórico, ajustes e a conexão com a agenda ficam iguais em todos os celulares com este código. Envie só para quem você confia.' : 'Ligue num celular e cole o código nos outros. Vai junto: rotina, tarefas, histórico, ajustes e a conexão com a agenda.'));
+
   // ===== Google Agenda =====
   const status = h('div', { class: 'set-status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('div', {}, st.connected ? (st.fetchedAt ? 'Conectada' : 'Conectada, ainda não atualizada') : st.count ? 'Sem conexão (usando cópia)' : 'Não conectada', h('small', {}, st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Os compromissos vêm do Google Agenda')));
   const agendaKids = [status];
@@ -298,7 +356,8 @@ export function render(root, ctx) {
 
   // ===== zerar =====
   const reset = sec('Zerar', group(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
-    if (!(await confirmSheet({ title: 'Apagar tudo?', text: 'Isso apaga todos os dados do Caderno neste aparelho. Gere um código antes, se quiser guardar.', yes: 'Apagar tudo', danger: true }))) return;
+    if (!(await confirmSheet({ title: 'Apagar tudo?', text: 'Isso apaga todos os dados do Caderno neste aparelho e para de sincronizar. Os outros celulares não são afetados.', yes: 'Apagar tudo', danger: true }))) return;
+    leaveFamily();
     clearAllLocal();
     resetIndex();
     replaceState(getDefaults());
@@ -306,7 +365,7 @@ export function render(root, ctx) {
     ctx.go('hoje');
   } }, icon('trash'), h('span', { class: 'tx' }, 'Apagar tudo deste aparelho'))));
 
-  root.append(h('div', { class: 'set' }, bar, agenda, casas, tempo, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · os dados ficam só neste aparelho.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
+  root.append(h('div', { class: 'set' }, bar, sincro, agenda, casas, tempo, backup, pin, reset, h('p', { class: 'set-foot' }, `Caderno ${VERSION} · ${fid ? 'sincronizado pelo Firebase' : 'os dados ficam só neste aparelho'}.`), h('p', { class: 'set-foot', style: { marginTop: '6px' } }, diag())));
 }
 
 async function connect(u, t, btn, ctx) {
