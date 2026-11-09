@@ -93,6 +93,19 @@ export function commit(mutator, { silent = false } = {}) {
   mutator(state);
   persist();
   if (!silent) listeners.forEach((fn) => fn());
+  // aviso leve para quem só precisa saber que algo mudou (ex.: a sincronização)
+  changed();
+}
+const changed = (detail) => {
+  try { window.dispatchEvent(new CustomEvent('caderno:changed', { detail })); } catch {}
+};
+
+/** mudança que veio de outro aparelho: grava e avisa o app (que redesenha sem atrapalhar quem digita) */
+export function applyRemote(mutator) {
+  mutator(state);
+  persist();
+  changed({ remote: true });
+  try { window.dispatchEvent(new Event('caderno:remote')); } catch {}
 }
 
 /** troca o estado inteiro (importação / zerar) */
@@ -101,6 +114,7 @@ export function replaceState(next) {
   Object.assign(state, defaults(), next);
   persist();
   listeners.forEach((fn) => fn());
+  changed();
 }
 
 export const getDefaults = defaults;
@@ -115,6 +129,7 @@ export const setConn = (c) => {
     if (c) localStorage.setItem(KEY_CONN, JSON.stringify(c));
     else localStorage.removeItem(KEY_CONN);
   } catch {}
+  changed();
 };
 export const getCache = () => readJSON(KEY_CACHE);
 export const setCache = (c) => {

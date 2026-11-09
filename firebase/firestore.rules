@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Caderno: uma família = um documento. Só quem sabe o código
+    // (20 caracteres aleatórios) lê ou grava. Listar e apagar: proibido.
+    match /families/{fid} {
+      allow get, create, update: if fid.matches('[a-z0-9]{20,40}');
+    }
+  }
+}
