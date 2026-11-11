@@ -143,8 +143,8 @@ function consumeSetupHash() {
 function maybeSync(force) {
   const st = syncStatus();
   if (!st.connected) return;
-  const age = minutesAgo(st.fetchedAt);
-  if (force || age === null || age >= 30) syncEvents().then((r) => r.ok && softRender());
+  const age = minutesAgo(st.readAt);
+  if (force || age === null || age >= (st.source === 'robo' ? 5 : 30)) syncEvents().then((r) => r.ok && softRender());
 }
 
 function maybeWx(force) {

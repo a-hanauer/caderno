@@ -213,26 +213,14 @@ export function render(root, ctx) {
       } }, icon('close'), h('span', { class: 'tx' }, 'Parar de sincronizar neste aparelho'))
     );
   }
-  const sincro = sec('Sincronizar aparelhos', group(...syncKids), note(fid ? 'Rotina, tarefas, histórico, ajustes e a conexão com a agenda ficam iguais em todos os celulares com este código. Envie só para quem você confia.' : 'Ligue num celular e cole o código nos outros. Vai junto: rotina, tarefas, histórico, ajustes e a conexão com a agenda.'));
+  const sincro = sec('Sincronizar aparelhos', group(...syncKids), note(fid ? 'Rotina, tarefas, histórico, ajustes e a agenda ficam iguais em todos os celulares com este código. Envie só para quem você confia.' : 'Ligue num celular e cole o código nos outros. Vai junto: rotina, tarefas, histórico, ajustes e a agenda.'));
 
   // ===== Google Agenda =====
-  const status = h('div', { class: 'set-status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('div', {}, st.connected ? (st.fetchedAt ? 'Conectada' : 'Conectada, ainda não atualizada') : st.count ? 'Sem conexão (usando cópia)' : 'Não conectada', h('small', {}, st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Os compromissos vêm do Google Agenda')));
-  const agendaKids = [status];
-  if (!conn) {
-    const url = h('input', { class: 'set-in', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', 'aria-label': 'Endereço do Apps Script', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
-    const tok = h('input', { class: 'set-in', type: 'text', placeholder: 'texto longo gerado pelo script', 'aria-label': 'Token', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
-    const go = btn('Conectar e testar', { cls: 'primary', onClick: () => connect(url.value, tok.value, go, ctx) });
-    const code = h('textarea', { class: 'set-in', rows: 3, placeholder: 'Cole aqui o link ou código de conexão', 'aria-label': 'Código de conexão', spellcheck: 'false' });
-    const useCode = btn('Usar código', { onClick: () => {
-      try {
-        const c = decodeConn(code.value);
-        connect(c.u, c.t, useCode, ctx);
-      } catch (e) {
-        toast(e.message);
-      }
-    } });
-    agendaKids.push(field('Endereço do app (Apps Script)', url), field('Token', tok), h('div', { class: 'set-btns' }, go), field('Ou cole um código de conexão', code), h('div', { class: 'set-btns' }, useCode));
-  } else {
+  let agenda;
+  if (fid) {
+    // com a família ligada, quem lê o Google é o robô (GitHub); os celulares só recebem
+    const late = st.fetchedAt && minutesAgo(st.fetchedAt) > 90;
+    const rStatus = h('div', { class: 'set-status ' + (st.fetchedAt ? (late ? 'bad' : 'ok') : 'bad') }, h('i'), h('div', {}, st.fetchedAt ? (late ? 'O robô está atrasado' : 'Recebendo do robô') : 'Aguardando o robô', h('small', {}, st.fetchedAt ? `${st.count} eventos · o robô leu o Google ${ago(st.fetchedAt)}` : 'Ainda não chegou nenhuma leitura da agenda')));
     const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
       upd.disabled = true;
       upd.lastChild.textContent = 'Atualizando…';
@@ -240,27 +228,54 @@ export function render(root, ctx) {
       toast(r.ok ? `Pronto: ${r.count} eventos.` : (REASONS[r.reason] || 'Não deu certo agora.') + (r.detail ? ' [' + r.detail + ']' : ''));
       ctx.rerender();
     } });
-    agendaKids.push(h('div', { class: 'set-btns' }, upd));
-    agendaKids.push(h('button', { class: 'set-row', type: 'button', onClick: async () => {
-      const text = connLink(conn);
-      if (navigator.share) {
+    agenda = sec('Google Agenda', group(rStatus, h('div', { class: 'set-btns' }, upd)), note('Um robô lê a agenda do Google a cada 15 a 30 minutos e entrega para todos os celulares da família. Mudanças feitas no Google aparecem aqui depois da próxima leitura.'));
+  } else {
+    const status = h('div', { class: 'set-status ' + (st.connected ? (st.fetchedAt ? 'ok' : '') : 'bad') }, h('i'), h('div', {}, st.connected ? (st.fetchedAt ? 'Conectada' : 'Conectada, ainda não atualizada') : st.count ? 'Sem conexão (usando cópia)' : 'Não conectada', h('small', {}, st.fetchedAt ? `${st.count} eventos · atualizada ${ago(st.fetchedAt)}` : 'Os compromissos vêm do Google Agenda')));
+    const agendaKids = [status];
+    if (!conn) {
+      const url = h('input', { class: 'set-in', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', 'aria-label': 'Endereço do Apps Script', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+      const tok = h('input', { class: 'set-in', type: 'text', placeholder: 'texto longo gerado pelo script', 'aria-label': 'Token', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+      const go = btn('Conectar e testar', { cls: 'primary', onClick: () => connect(url.value, tok.value, go, ctx) });
+      const code = h('textarea', { class: 'set-in', rows: 3, placeholder: 'Cole aqui o link ou código de conexão', 'aria-label': 'Código de conexão', spellcheck: 'false' });
+      const useCode = btn('Usar código', { onClick: () => {
         try {
-          await navigator.share({ title: 'Caderno', text });
-          return;
-        } catch {}
-      }
-      toast((await copyText(text)) ? 'Link copiado.' : 'Não consegui copiar.');
-    } }, icon('link'), h('span', { class: 'tx' }, 'Copiar link de conexão', h('small', {}, 'Para conectar outro celular sem digitar')), icon('right')));
-    agendaKids.push(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
-      if (await confirmSheet({ title: 'Desconectar?', text: 'A agenda some do app até conectar de novo. Seus dados da rotina e tarefas continuam.', yes: 'Desconectar', danger: true })) {
-        setConn(null);
-        localStorage.removeItem('caderno:v1:cache');
-        resetIndex();
+          const c = decodeConn(code.value);
+          connect(c.u, c.t, useCode, ctx);
+        } catch (e) {
+          toast(e.message);
+        }
+      } });
+      agendaKids.push(h('p', { class: 'set-note', style: { margin: '10px 0 0' } }, 'Ligue "Sincronizar aparelhos" acima: a agenda chega junto, sem configurar nada aqui.'));
+    } else {
+      const upd = btn('Atualizar agora', { cls: 'primary', ic: 'refresh', onClick: async () => {
+        upd.disabled = true;
+        upd.lastChild.textContent = 'Atualizando…';
+        const r = await syncEvents();
+        toast(r.ok ? `Pronto: ${r.count} eventos.` : (REASONS[r.reason] || 'Não deu certo agora.') + (r.detail ? ' [' + r.detail + ']' : ''));
         ctx.rerender();
-      }
-    } }, icon('close'), h('span', { class: 'tx' }, 'Desconectar a agenda')));
+      } });
+      agendaKids.push(h('div', { class: 'set-btns' }, upd));
+      agendaKids.push(h('button', { class: 'set-row', type: 'button', onClick: async () => {
+        const text = connLink(conn);
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'Caderno', text });
+            return;
+          } catch {}
+        }
+        toast((await copyText(text)) ? 'Link copiado.' : 'Não consegui copiar.');
+      } }, icon('link'), h('span', { class: 'tx' }, 'Copiar link de conexão', h('small', {}, 'Para conectar outro celular sem digitar')), icon('right')));
+      agendaKids.push(h('button', { class: 'set-row danger', type: 'button', onClick: async () => {
+        if (await confirmSheet({ title: 'Desconectar?', text: 'A agenda some do app até conectar de novo. Seus dados da rotina e tarefas continuam.', yes: 'Desconectar', danger: true })) {
+          setConn(null);
+          localStorage.removeItem('caderno:v1:cache');
+          resetIndex();
+          ctx.rerender();
+        }
+      } }, icon('close'), h('span', { class: 'tx' }, 'Desconectar a agenda')));
+    }
+    agenda = sec('Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
   }
-  const agenda = sec('Google Agenda', group(...agendaKids), conn ? note('O link de conexão dá acesso aos títulos da agenda. Envie só para quem você confia.') : null);
 
   // ===== casas =====
   const kwPai = h('input', { class: 'set-in', type: 'text', value: state.settings.kwPai, 'aria-label': 'Palavras da casa do Papai', autocapitalize: 'off', spellcheck: 'false' });

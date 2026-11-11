@@ -1,0 +1,29 @@
+name: Agenda
+
+# Lê a agenda do Google (link iCal secreto) e grava no Firebase para os celulares.
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenda
+  cancel-in-progress: false
+
+jobs:
+  agenda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/agenda-bot.mjs
+        env:
+          TZ: America/Sao_Paulo
+          AGENDA_ICS: ${{ secrets.AGENDA_ICS }}
+          FAMILIA: ${{ secrets.FAMILIA }}
