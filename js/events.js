@@ -2,6 +2,7 @@
 // detecção da casa (pai/mãe) e categorias.
 import { state, getConn, getCache, setCache } from './store.js';
 import { addDays, diffDays, norm, today } from './util.js';
+import { familyCode, fetchAgenda } from './sync.js';
 
 // ---------- categorias (por palavras no título) ----------
 export const CATS = [
@@ -152,16 +153,36 @@ export function isSyncing() {
 export function syncStatus() {
   const conn = getConn();
   const cache = getCache();
-  return { connected: !!conn, fetchedAt: cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
+  const fam = !!familyCode();
+  // com a família ligada, a agenda vem do robô (pelo Firebase); sem ela, do Apps Script antigo
+  return { connected: fam || !!conn, source: fam ? 'robo' : conn ? 'script' : null, fetchedAt: cache?.fetchedAt || 0, readAt: cache?.readAt || cache?.fetchedAt || 0, count: cache?.events?.length || 0 };
 }
 
 export function minutesAgo(ts) {
   return ts ? Math.max(0, Math.round((Date.now() - ts) / 60000)) : null;
 }
 
-/** busca os eventos no Apps Script. Nunca lança erro: devolve {ok, reason} */
+/** agenda gravada pelo robô no Firebase (documento ao lado do da família) */
+async function syncFromRobot() {
+  try {
+    const r = await fetchAgenda();
+    if (!r) return { ok: false, reason: 'robo-vazio' };
+    setCache({ events: sanitize(r.events), fetchedAt: r.at, readAt: Date.now(), from: r.from, to: r.to, name: r.name, src: 'robo' });
+    memo = { sig: '', idx: null };
+    return { ok: true, count: r.events.length };
+  } catch (e) {
+    return { ok: false, reason: 'robo-rede', detail: String((e && e.message) || e).slice(0, 80) };
+  }
+}
+
+/** busca os eventos (robô pelo Firebase, ou o Apps Script antigo). Nunca lança erro: devolve {ok, reason} */
 export function syncEvents() {
   if (inflight) return inflight;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve({ ok: false, reason: 'offline' });
+  if (familyCode()) {
+    inflight = syncFromRobot().finally(() => (inflight = null));
+    return inflight;
+  }
   const conn = getConn();
   if (!conn) return Promise.resolve({ ok: false, reason: 'sem-conexao' });
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve({ ok: false, reason: 'offline' });
@@ -209,6 +230,8 @@ export function resetIndex() {
 export const REASONS = {
   'sem-conexao': 'A agenda ainda não está conectada.',
   offline: 'Sem internet agora. Usando a última cópia.',
+  'robo-vazio': 'O robô ainda não gravou a agenda. Confira os segredos no GitHub.',
+  'robo-rede': 'Não consegui ler a agenda agora. Tente de novo.',
   token: 'O código de acesso não foi aceito. Confira o token.',
   resposta: 'A resposta do Google veio estranha. Confira o endereço.',
   tempo: 'O Google demorou demais. Tente de novo.',

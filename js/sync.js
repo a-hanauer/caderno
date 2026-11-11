@@ -161,6 +161,17 @@ async function putRemote(fid, M, changed, ut) {
   throw new Error('put ' + status + ' ' + st);
 }
 
+/** agenda que o robô gravou: { events, from, to, name, at } ou null se ainda não há */
+export async function fetchAgenda() {
+  if (!meta) return null;
+  const { status, body } = await call(ROOT + meta.fid + 'agenda?key=' + API_KEY);
+  if (status === 404) return null;
+  if (status !== 200) throw new Error('agenda ' + status);
+  const d = parse(body.fields?.data?.stringValue, null);
+  if (!d || !Array.isArray(d.events)) return null;
+  return { ...d, at: Number(body.fields?.at?.integerValue) || Date.parse(body.updateTime) || Date.now() };
+}
+
 const typing = () => {
   const a = document.activeElement;
   return a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.readOnly;
@@ -246,6 +257,7 @@ export async function joinFamily(fid) {
   meta = { fid, base: r.R, ut: r.ut, at: Date.now() };
   saveMeta();
   start();
+  try { window.dispatchEvent(new Event('caderno:conn')); } catch {}
 }
 
 /** este aparelho para de sincronizar (os dados ficam aqui e na nuvem) */
