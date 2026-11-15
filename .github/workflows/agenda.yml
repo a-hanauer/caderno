@@ -1,9 +1,10 @@
 name: Agenda
 
 # Lê a agenda do Google (link iCal secreto) e grava no Firebase para os celulares.
+# PAUSADO: o agendamento está desligado. Para religar, tire o # das duas linhas do cron.
 on:
-  schedule:
-    - cron: '7,22,37,52 * * * *'
+  # schedule:
+  #   - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
 permissions:
